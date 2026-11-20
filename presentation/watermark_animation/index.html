@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forensic Watermark Walkthrough</title>
+<meta name="description" content="Scroll through six steps from a viewer's ID to an invisible mark in a film frame and back; every value comes from the project code.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+@import url("./tokens.css");
+@import url("./base.css");
+
+:root { --bar-h: 56px; --stage-gap: var(--space-lg); }
+body { font-size: 1.0625rem; }
+
+.bar { position: sticky; top: 0; z-index: var(--z-sticky-nav); height: var(--bar-h); background: var(--color-paper); border-bottom: var(--rule-hair) solid var(--color-rule); }
+.bar__in { height: 100%; max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); display: flex; align-items: center; gap: var(--space-lg); }
+.wordmark { font: 600 var(--text-md)/1 var(--font-display); letter-spacing: var(--tracking-display); white-space: nowrap; display: flex; align-items: center; gap: var(--space-xs); }
+.wordmark::before { content: ""; width: 10px; height: 10px; background: var(--color-accent); border-radius: 2px; }
+.chapters { display: flex; gap: var(--space-3xs); margin: 0 auto; padding: 0; list-style: none; }
+.chapters a { display: flex; align-items: center; gap: var(--space-2xs); min-height: 40px; padding: 0 var(--space-xs); border-radius: var(--radius-input); color: var(--color-muted); text-decoration: none; font: 500 var(--text-sm)/1 var(--font-display); white-space: nowrap; transition: color var(--dur-short) var(--ease-out), background-color var(--dur-short) var(--ease-out); }
+.chapters a .n { font-variant-numeric: tabular-nums; }
+.chapters a:hover { color: var(--color-ink); background: var(--color-paper-2); }
+.chapters a:active { background: var(--color-paper-3); }
+.chapters a[aria-current="step"] { color: var(--color-accent); background: var(--color-accent-wash); }
+.tray { display: inline-flex; gap: var(--space-3xs); padding: var(--space-3xs); background: var(--color-paper-3); border-radius: var(--radius-input); }
+.tray button { min-height: 32px; min-width: 40px; padding: 0 var(--space-xs); border: var(--rule-hair) solid transparent; border-radius: 4px; background: none; color: var(--color-ink-2); font: 500 var(--text-sm)/1 var(--font-display); cursor: pointer; transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); }
+.tray button:hover { color: var(--color-ink); }
+.tray button:active { background: var(--color-paper-2); }
+.tray button[aria-pressed="true"] { background: var(--color-key-face); border-color: var(--color-rule-2); color: var(--color-ink); box-shadow: 0 1px 0 var(--color-key-edge); }
+
+.story { max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); column-gap: var(--space-xl); }
+.text { grid-column: 1; grid-row: 1; min-width: 0; }
+.stage { grid-column: 2; grid-row: 1; align-self: start; position: sticky; top: calc(var(--bar-h) + var(--stage-gap)); height: calc(100svh - var(--bar-h) - 2 * var(--stage-gap)); margin-top: var(--stage-gap); display: grid; grid-template-rows: minmax(0, 1fr) auto; min-width: 0;
+  background-color: var(--color-paper); background-image: radial-gradient(var(--color-rule-2) 1px, transparent 1.2px); background-size: 16px 16px; background-position: 8px 8px;
+  border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); box-shadow: var(--shadow-card); z-index: var(--z-sticky); overflow: hidden; }
+@supports (corner-shape: bevel) { .stage { border-radius: var(--cut-l) 4px var(--cut-l) 4px; corner-shape: bevel round bevel round; } }
+.stage canvas { width: 100%; height: 100%; display: block; min-height: 0; }
+.stage__cap { display: flex; gap: var(--space-md); align-items: baseline; justify-content: space-between; padding: var(--space-xs) var(--space-md); border-top: var(--rule-hair) solid var(--color-rule); background: var(--color-paper); font: 500 var(--text-sm)/1.4 var(--font-display); color: var(--color-ink-2); min-height: 40px; }
+.stage__cap .where { color: var(--color-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stage noscript img { width: 100%; height: auto; }
+
+.hero { min-height: calc(100svh - var(--bar-h)); display: grid; align-content: center; gap: var(--space-lg); padding-block: var(--space-2xl); }
+.hero h1 { font-size: var(--text-display); max-width: 11ch; }
+.hero .lead { color: var(--color-ink-2); max-width: 34ch; }
+.key { display: inline-flex; align-items: center; gap: var(--space-xs); width: fit-content; min-height: 48px; padding: 0 var(--space-lg); border: var(--rule-hair) solid var(--color-rule-2); border-radius: var(--radius-input); background: var(--color-key-face); color: var(--color-ink); font: 500 var(--text-md)/1 var(--font-display); text-decoration: none; box-shadow: var(--shadow-key); cursor: pointer; transition: transform var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out); }
+.key:hover { transform: translateY(-1px); }
+.key:active { transform: translateY(3px); box-shadow: var(--shadow-key-press); }
+.key--primary { background: var(--color-accent); border-color: var(--color-accent-edge); color: var(--color-accent-ink); box-shadow: var(--shadow-key-accent); }
+.key svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.75; }
+.facts { display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-lg); margin: 0; padding: 0; list-style: none; font: 500 var(--text-sm)/1.4 var(--font-display); color: var(--color-muted); }
+.facts b { font: 500 var(--text-sm) var(--font-outlier); color: var(--color-ink); }
+
+.ch { min-height: 230svh; }
+.ch__body { position: sticky; top: calc(var(--bar-h) + 10svh); display: grid; gap: var(--space-md); padding-block: var(--space-lg); }
+.ch__num { font: 600 var(--text-display-s)/1 var(--font-display); letter-spacing: var(--tracking-display); color: var(--color-rule-2); font-variant-numeric: tabular-nums; transition: color var(--dur-short) var(--ease-out); }
+.ch.is-current .ch__num { color: var(--color-accent); }
+.ch h2 { font-size: var(--text-2xl); max-width: 22ch; }
+.ch p { color: var(--color-ink-2); max-width: 46ch; }
+.ledger { display: grid; grid-template-columns: max-content minmax(0, 1fr); margin: var(--space-xs) 0 0; border-top: var(--rule-hair) solid var(--color-rule); }
+.ledger dt, .ledger dd { margin: 0; padding: var(--space-xs) 0; border-bottom: var(--rule-hair) solid var(--color-rule); }
+.ledger dt { font: 500 var(--text-sm)/1.5 var(--font-display); color: var(--color-muted); padding-right: var(--space-lg); }
+.ledger dd { font: 400 0.8125rem/1.6 var(--font-outlier); color: var(--color-ink); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.ledger dd.hot { color: var(--color-accent); font-weight: 500; }
+details { font-size: var(--text-sm); }
+summary { width: fit-content; min-height: 36px; display: flex; align-items: center; gap: var(--space-xs); cursor: pointer; color: var(--color-ink); font: 500 var(--text-sm) var(--font-display); text-decoration: underline var(--rule-hair) var(--color-rule-2); text-underline-offset: 0.3em; transition: text-decoration-color var(--dur-short) var(--ease-out); }
+summary:hover { text-decoration-color: var(--color-accent); }
+details p.formula { margin-top: var(--space-2xs); padding: var(--space-sm) var(--space-md); background: var(--color-graphite); color: var(--color-graphite-ink); border-radius: var(--radius-input); font: 400 0.8125rem/1.7 var(--font-outlier); max-width: none; overflow-wrap: anywhere; }
+
+@media (max-width: 75rem) { .chapters a .t { display: none; } }
+@media (max-width: 60rem) {
+  :root { --stage-gap: 0px; }
+  .story { grid-template-columns: minmax(0, 1fr); padding-inline: 0; }
+  .stage { grid-column: 1; grid-row: 1; top: var(--bar-h); height: 46svh; margin: 0; border-radius: 0; border-inline: 0; }
+  .text { grid-column: 1; grid-row: 2; padding-inline: var(--gutter); }
+  .hero { min-height: 0; padding-block: var(--space-xl) var(--space-2xl); }
+  .ch { min-height: 190svh; }
+  .ch__body { top: calc(var(--bar-h) + 46svh); padding-block: var(--space-lg); background: var(--color-paper); }
+  .chapters { gap: 0; }
+  .chapters a { padding: 0 var(--space-2xs); }
+}
+@media (max-width: 40rem) { .wordmark span { display: none; } .bar__in { gap: var(--space-xs); } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="bar__in">
+    <div class="wordmark"><span>Forensic watermark</span></div>
+    <ol class="chapters" aria-label="Chapters">
+      <li><a href="#ch1"><span class="n">1</span> <span class="t">Values and keys</span></a></li>
+      <li><a href="#ch2"><span class="n">2</span> <span class="t">Encryption</span></a></li>
+      <li><a href="#ch3"><span class="n">3</span> <span class="t">Into the picture</span></a></li>
+      <li><a href="#ch4"><span class="n">4</span> <span class="t">Inside one block</span></a></li>
+      <li><a href="#ch5"><span class="n">5</span> <span class="t">Invisible</span></a></li>
+      <li><a href="#ch6"><span class="n">6</span> <span class="t">Back to the user</span></a></li>
+    </ol>
+    <div class="tray" role="group" aria-label="Cipher">
+      <button type="button" data-alg="PRESENT-128" aria-pressed="true">PRESENT-128</button>
+      <button type="button" data-alg="FF1" aria-pressed="false">FF1</button>
+    </div>
+  </div>
+</header>
+
+<main class="story">
+  <figure class="stage" aria-label="Animated diagram that follows the text">
+    <canvas id="cv" role="img" aria-label="Film frame, 1280 by 534 pixels, with the watermark bits drawn over it"></canvas>
+    <figcaption class="stage__cap"><span id="cap" aria-live="polite">Original frame</span><span class="where" id="where">1280 × 534</span></figcaption>
+    <noscript><img src="marked_present.png" width="1280" height="534" alt="The marked frame"></noscript>
+  </figure>
+
+  <div class="text">
+    <section class="hero" aria-labelledby="h1">
+      <h1 id="h1">A viewer’s ID, hidden in a frame</h1>
+      <p class="lead">Six steps, from user 42 to an invisible mark and back.</p>
+      <a class="key key--primary" href="#ch1"><span>Start</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+      <ul class="facts">
+        <li><span>Frame</span> <b>1280 × 534</b></li>
+        <li><span>Ciphers</span> <b><span data-v="alg">PRESENT-128</span>, SipHash-2-4</b></li>
+      </ul>
+    </section>
+
+    <section class="ch" id="ch1" data-ch="0" aria-labelledby="ch1h">
+      <div class="ch__body">
+      <div class="ch__num" aria-hidden="true">01</div>
+      <h2 id="ch1h">One viewer, one 64-bit block</h2>
+      <p>The platform hides who is watching. User 42 and session 0 go into one 64-bit block. A 32-byte master key comes from the operating system’s random generator, and HKDF derives three keys for this film from it.</p>
+      <dl class="ledger">
+        <dt>user_id</dt><dd class="hot">42</dd>
+        <dt>film_id</dt><dd>film-0239</dd>
+        <dt>Master key</dt><dd>7ec49d98ebd0b195ce83cf60c63b4ba0fe3707baf6e8b7287affc90c890f178d</dd>
+        <dt>enc_key</dt><dd>d7b5b66698656b5cbea160b0b17198d6</dd>
+        <dt>mac_key</dt><dd>5c35b1040a9affcc3c9ef4f7c8bea148</dd>
+        <dt>stego_key</dt><dd>ca35dd5d6534c0614eaa89035a49354fabdb6307d921eec02dd90281464715ff</dd>
+      </dl>
+      <details><summary>The exact layout</summary><p class="formula">block = VER (4) | user_id (32) | session (24) | reserved (4)<br>enc_key → <span data-v="alg">PRESENT-128</span>, mac_key → SipHash-2-4, stego_key → pattern</p></details>
+      </div>
+    </section>
+
+    <section class="ch" id="ch2" data-ch="1" aria-labelledby="ch2h">
+      <div class="ch__body">
+      <div class="ch__num" aria-hidden="true">02</div>
+      <h2 id="ch2h"><span data-v="rounds">31</span> rounds, still 64 bits</h2>
+      <p data-v="p2">PRESENT-128 scrambles the block in 31 rounds: a round key, an S-box on every 4 bits, then the bits change places. Nothing grows. A 32-bit SipHash tag lets the platform reject a wrong or forged mark, and BCH adds 92 parity bits against damage.</p>
+      <dl class="ledger">
+        <dt>Plaintext</dt><dd>0x10000002a0000000</dd>
+        <dt>Ciphertext</dt><dd class="hot">0x<span data-v="ct">ce9c552913fe041c</span></dd>
+        <dt>SipHash tag</dt><dd>0x<span data-v="tag">d9f1ccd6</span></dd>
+        <dt>Codeword</dt><dd>64 + 32 + 92 = 188 bits</dd>
+      </dl>
+      <details><summary>The exact formula</summary><p class="formula">C = <span data-v="calg">PRESENT-128(enc_key, block)</span><br>tag = SipHash-2-4(mac_key, alg ‖ film_id ‖ SHA-256(enc_key)[:8] ‖ C)[:32 bits]<br>codeword = BCH(188, 96) of C ‖ tag</p></details>
+      </div>
+    </section>
+
+    <section class="ch" id="ch3" data-ch="2" aria-labelledby="ch3h">
+      <div class="ch__body">
+      <div class="ch__num" aria-hidden="true">03</div>
+      <h2 id="ch3h">Each bit gets its own blocks</h2>
+      <p>The frame is cut into 8×8 pixel blocks. Bit 0 goes to block 0, bit 1 to block 1, in reading order. After block 187 the codeword starts again, so every bit lands in about 56 blocks of each frame.</p>
+      <dl class="ledger">
+        <dt>Blocks</dt><dd>160 × 66 = 10,560</dd>
+        <dt>Held for</dt><dd>about 1 s, length set by stego_key (same bit, same pattern)</dd>
+        <dt>Bottom rows</dt><dd>6 rows: 534 is not a multiple of 8, so rows 528 to 534 are never changed</dd>
+      </dl>
+      </div>
+    </section>
+
+    <section class="ch" id="ch4" data-ch="3" aria-labelledby="ch4h">
+      <div class="ch__body">
+      <div class="ch__num" aria-hidden="true">04</div>
+      <h2 id="ch4h">Five numbers move a little</h2>
+      <p>Block (21, 41) sits between the older man’s eyes and carries bit 17, a <span data-v="bit">1</span>. In the frequency domain only five low coefficients move, each by about 4.645, along a secret ±1 pattern from stego_key. The pixels change by a few grey levels.</p>
+      <dl class="ledger">
+        <dt>Strength α_b</dt><dd>4.645</dd>
+        <dt>Bit sign s</dt><dd data-v="s">+1</dd>
+        <dt>Pattern u</dt><dd>[+1, +1, +1, −1, +1]</dd>
+      </dl>
+      <details><summary>The exact formula</summary><p class="formula">c′ = c + α_b × s × u on zigzag coefficients 1 to 5. α_b is stronger in textured blocks and weaker in flat ones (film average 3.098).</p></details>
+      </div>
+    </section>
+
+    <section class="ch" id="ch5" data-ch="4" aria-labelledby="ch5h">
+      <div class="ch__body">
+      <div class="ch__num" aria-hidden="true">05</div>
+      <h2 id="ch5h">Look for it</h2>
+      <p>Original on the left of the line, marked on the right. No pixel moves by more than <span data-v="maxc">4</span> grey levels out of 255. Only the difference, multiplied by 20, shows where the mark is.</p>
+      <dl class="ledger">
+        <dt>PSNR (Y)</dt><dd><span data-v="psnr">49.09</span> dB</dd>
+        <dt>SSIM (Y)</dt><dd data-v="ssim">0.9958</dd>
+        <dt>Largest change</dt><dd><span data-v="maxc">4</span> / 255</dd>
+        <dt>Pixels touched</dt><dd><span data-v="share">41</span>%</dd>
+      </dl>
+      </div>
+    </section>
+
+    <section class="ch" id="ch6" data-ch="5" aria-labelledby="ch6h">
+      <div class="ch__body">
+      <div class="ch__num" aria-hidden="true">06</div>
+      <h2 id="ch6h">From a leaked copy to a user</h2>
+      <p>The platform lines the leak up with its original, scores every block against the secret pattern and adds up the evidence for each of the 188 bits. BCH repairs what broke. Only a valid MAC lets the block be decrypted.</p>
+      <dl class="ledger">
+        <dt>Identified</dt><dd class="hot">user_id 42, session 0</dd>
+        <dt>Wrong key</dt><dd>stops at the MAC: no valid watermark</dd>
+      </dl>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script id="data" type="application/json">{"film_id":"film-0239","user_id":42,"session":0,"version":1,"master_key":"7ec49d98ebd0b195ce83cf60c63b4ba0fe3707baf6e8b7287affc90c890f178d","enc_key":"d7b5b66698656b5cbea160b0b17198d6","mac_key":"5c35b1040a9affcc3c9ef4f7c8bea148","stego_key":"ca35dd5d6534c0614eaa89035a49354fabdb6307d921eec02dd90281464715ff","block_bits":"0001000000000000000000000000001010100000000000000000000000000000","width":1280,"height":534,"blocks_x":160,"blocks_y":66,"nblocks":10560,"alpha":3.098,"close":{"row":21,"col":41,"block":3401,"bit_index":17,"alpha_b":4.645,"u":[1,1,1,-1,1],"band":[[0,1],[1,0],[2,0],[1,1],[0,2]],"pix_o":[[71,71,74,85,97,108,124,135],[63,61,63,72,87,105,129,145],[59,56,57,62,72,100,135,156],[64,61,58,58,64,92,136,165],[71,67,64,63,67,90,134,170],[67,69,70,70,71,94,136,172],[57,61,66,70,78,98,138,174],[53,58,64,72,81,105,144,174]],"coef_o":[[731.6,-249.7,120.8,-41.6,9.6,2.9,-2.0,-0.2],[-6.1,25.8,-23.5,22.3,-2.1,1.0,-0.4,0.6],[16.4,1.3,-34.7,9.1,0.9,-2.6,-0.5,0.5],[14.4,21.7,-4.4,-3.8,3.4,-2.2,0.1,0.1],[3.4,4.9,1.4,0.7,0.4,0.5,-1.0,-0.1],[-1.6,-0.0,-0.2,-1.7,-0.7,0.0,-0.2,0.1],[2.8,1.2,-0.7,-0.5,-2.1,1.8,0.2,-1.4],[-0.6,-0.3,-0.5,0.7,1.4,-0.3,0.5,0.4]]},"algs":{"PRESENT-128":{"slug":"present","rounds":31,"states":["0001000000000000000000000000001010100000000000000000000000000000","0110111110101100110000000000000100000110111010000100000111000000","0010000101011001011001111110111111010000000101111011101110001011","0111101111110001111101000110101011000011010110110101011011100100","0111110111110000010010111010001011011011100100110010111100011101","1100110110011111101101010101110110111011011111010111100001011011","0110100011000111011000101111110100101101010001011100011011101100","0111010111001101010011110111010011111000001010100101111010100001","0110111001000101100000110010101011101000111110100000010101001000","0010000000101100011011010101001110010011010011110100110101100110","1110000011110110010111000100001100110110001100010100010111010010","0001111010011011110010100001110110100101110010011110100101110011","1001011000110101001001101111011101011011011101111000000010000000","1101000011100100110111001011100011101100010010000100100110001010","0110100001101110111110010010100010101101011000010111110010000011","0000000111011000010100011110110110010011011010010101110100110111","1110111011100010011000000001100001000010100111111100111110100110","1001101110100001010011011011101100111000010101000110101101011111","0100110011010100100001011000100010101100011001110011101010010010","0111011100101000001110011101111010110101100100011010100011111101","0000011000110110000000100010110001011001011011001111110011100111","0001011110100000111000011110001011101010101100011100010000010000","0100010010000000101000101010101011110100110010011010111010000110","1000001101001001000110101110111111001001001000100010101101111001","0010010101110001000100001001001000000100001011101110101111110111","1000101011001111111111010101000010101001100100001110111100100100","1011011101011010001001110000000111000110110001100010111010110100","0110100111000000000011100000101001011001000001011011010000001000","1101000011101001000010001100000000011000110110010100110000010001","1110100110001101111101101010111000110100001100110111101000000011","0101100011100010000011000001010100101101001011001000111010111111","0010001010010101100011000100010000010110000000100000111111000110","1100111010011100010101010010100100010011111111100000010000011100"],"ciphertext_hex":"ce9c552913fe041c","tag_hex":"d9f1ccd6","kc":"881ad91f87d451bf","codeword":"11001110100111000101010100101001000100111111111000000100000111001101100111110001110011001101011011111010100010001011110100101000111000111101100011100010010011100010011000101110111111000011","close_bit":1,"pix_m":[[73,73,75,86,98,109,126,138],[65,62,64,72,87,106,130,147],[60,57,57,61,71,100,135,157],[65,61,57,57,63,91,135,165],[72,67,63,62,65,88,133,169],[68,70,70,69,69,92,134,171],[59,62,66,69,77,96,136,173],[56,60,65,72,80,104,143,173]],"coef_m":[[732.0,-245.2,125.7,-41.9,10.2,2.6,-1.7,-0.5],[-1.7,21.6,-23.2,22.2,-2.3,0.8,-0.3,0.5],[21.3,1.6,-34.7,8.9,0.8,-2.7,-0.4,0.7],[14.1,21.7,-4.5,-4.4,3.7,-2.2,-0.3,0.1],[4.0,4.8,1.2,1.0,0.7,1.0,-1.6,-0.2],[-1.9,-0.2,-0.3,-1.6,-0.1,-0.7,-0.4,0.2],[3.1,1.4,-0.7,-1.0,-2.7,1.6,-0.1,-1.8],[-0.9,-0.4,-0.3,0.7,1.3,-0.2,0.1,0.5]],"psnr_y":49.09,"ssim_y":0.9958,"max_abs_change":4,"share_changed":0.413},"FF1":{"slug":"ff1","rounds":10,"states":["0001000000000000000000000000001010100000000000000000000000000000","1010000000000000000000000000000011000101010111000000000000000000","1100010101011100000000000000000011101001111100000010001110111000","1110100111110000001000111011100011101100100001101011111001101101","1110110010000110101111100110110111011010101000110011010111110010","1101101010100011001101011111001010001110010000010110110001001010","1000111001000001011011000100101000000001110000001010111100001111","0000000111000000101011110000111100101110000101010000011111010000","0010111000010101000001111101000001100100110000100110001111100101","0110010011000010011000111110010101110111011001010100011100110000","0111011101100101010001110011000010000000111100111101100001001100"],"ciphertext_hex":"7765473080f3d84c","tag_hex":"a022357b","kc":"881ad91f87d451bf","codeword":"01110111011001010100011100110000100000001111001111011000010011001010000000100010001101010111101101001011001011000000111110110000000101100100010110101111000011100110101101111110110011010101","close_bit":1,"pix_m":[[73,73,75,86,98,109,126,138],[65,62,64,72,87,106,130,147],[60,57,57,61,71,100,135,157],[65,61,57,57,63,91,135,165],[72,67,63,62,65,88,133,169],[68,70,70,69,69,92,134,171],[59,62,66,69,77,96,136,173],[56,60,65,72,80,104,143,173]],"coef_m":[[732.0,-245.2,125.7,-41.9,10.2,2.6,-1.7,-0.5],[-1.7,21.6,-23.2,22.2,-2.3,0.8,-0.3,0.5],[21.3,1.6,-34.7,8.9,0.8,-2.7,-0.4,0.7],[14.1,21.7,-4.5,-4.4,3.7,-2.2,-0.3,0.1],[4.0,4.8,1.2,1.0,0.7,1.0,-1.6,-0.2],[-1.9,-0.2,-0.3,-1.6,-0.1,-0.7,-0.4,0.2],[3.1,1.4,-0.7,-1.0,-2.7,1.6,-0.1,-1.8],[-0.9,-0.4,-0.3,0.7,1.3,-0.2,0.1,0.5]],"psnr_y":49.09,"ssim_y":0.9958,"max_abs_change":4,"share_changed":0.413}}}</script>
+<script>
+const D = JSON.parse(document.getElementById("data").textContent);
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const W = D.width, H = D.height, BX = D.blocks_x, BY = D.blocks_y, NB = D.nblocks, C = D.close;
+let ALG = "PRESENT-128", A = D.algs[ALG], CW = A.codeword, ST = A.states, LAST = ST.length - 1;
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const hex = bits => "0x" + BigInt("0b" + bits).toString(16).padStart(16, "0");
+const PER = Math.round(NB / 188), EDGE = H - BY * 8;
+let sgn = 1, coefT = [];
+const makeCoefT = () => C.coef_o.map((r, i) => r.map((v, j) => { const k = C.band.findIndex(([a, b]) => a === i && b === j); return k < 0 ? v : v + C.alpha_b * sgn * C.u[k]; }));
+const inBand = (i, j) => C.band.some(([a, b]) => a === i && b === j);
+
+const OPS = { "PRESENT-128": "add round key, S-box layer, bit permutation", FF1: "AES-128 on one half with the film tweak, added mod 2³² to the other, halves swap" };
+const P2 = {
+  "PRESENT-128": "PRESENT-128 scrambles the block in 31 rounds: a round key, an S-box on every 4 bits, then the bits change places. Nothing grows. A 32-bit SipHash tag lets the platform reject a wrong or forged mark, and BCH adds 92 parity bits against damage.",
+  FF1: "FF1 splits the block into two 32-bit halves and runs 10 Feistel rounds: AES-128 mixes one half with the film as tweak, the result is added to the other half, then the halves swap. Nothing grows. A 32-bit SipHash tag lets the platform reject a wrong or forged mark, and BCH adds 92 parity bits against damage.",
+};
+const CALG = { "PRESENT-128": "PRESENT-128(enc_key, block)", FF1: "FF1(enc_key, tweak = film_id, block)" };
+const lang = "en", UI = {};
+function buildUI() {
+  UI.en = { orig: "Original frame", block64: "Plaintext block, 64 bits", master: "Master key, 32 bytes, OS random generator", hkdf: `HKDF-SHA256, film_id = ${D.film_id}`,
+        to: [`→ ${ALG}`, "→ SipHash-2-4", "→ pattern"], round: r => `Round ${r} / ${A.rounds}`, plain: "Plaintext", cipher: "Ciphertext C",
+        groups: ["Ciphertext, 64", "Tag, 32", "BCH parity, 92"], cw: "Codeword: 64 + 32 + 92 = 188 bits", ops: OPS[ALG],
+        fly: "Bit i lands in block i", fill: `${NB.toLocaleString("en")} blocks, every bit about ${PER} times per frame`, pick: `Block (${C.row}, ${C.col}) carries bit ${C.bit_index} = ${C.bit}`,
+        edge: `${EDGE} rows never changed`, pix: "Pixels (Y)", dct: "DCT, 5 low coefficients", chg: "Change", formula: `c′ = c + ${C.alpha_b} × (${sgn > 0 ? "+1" : "−1"}) × u`,
+        marked: "Marked frame", wipe: "Original | marked", diff: "Difference ×20 around mid-grey",
+        stats: [["PSNR (Y)", `${A.psnr_y} dB`], ["SSIM", String(A.ssim_y)], ["Largest change", `${A.max_abs_change} / 255`], ["Pixels touched", `${Math.round(A.share_changed * 100)}%`]],
+        steps: ["Align", "Correlate", "Add up 188 bits", "BCH", "MAC valid", "Decrypt", "Look up"], leak: "Leaked copy", user: "user_id", session: `session ${D.session}`, origL: "Original", markL: "Marked" };
+}
+function setAlg(name) {
+  ALG = name; A = D.algs[name]; CW = A.codeword; ST = A.states; LAST = ST.length - 1;
+  Object.assign(C, { bit: A.close_bit, pix_m: A.pix_m, coef_m: A.coef_m });
+  sgn = C.bit ? 1 : -1; coefT = makeCoefT();
+  imgs.marked = imgs["marked_" + A.slug]; imgs.diff20 = imgs["diff20_" + A.slug];
+  buildUI();
+  const v = { alg: ALG, rounds: A.rounds, p2: P2[ALG], ct: A.ciphertext_hex, tag: A.tag_hex, calg: CALG[ALG], bit: C.bit, s: sgn > 0 ? "+1" : "−1",
+              maxc: A.max_abs_change, psnr: A.psnr_y, ssim: A.ssim_y, share: Math.round(A.share_changed * 100) };
+  document.querySelectorAll("[data-v]").forEach(el => { el.textContent = v[el.dataset.v]; });
+  document.querySelectorAll("[data-alg]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.alg === ALG)));
+  try { localStorage.setItem("wm-alg", ALG); } catch (e) {}
+  lastCap = ""; draw();
+}
+document.querySelectorAll("[data-alg]").forEach(b => { b.onclick = () => setAlg(b.dataset.alg); });
+
+const cv = document.getElementById("cv"), g = cv.getContext("2d");
+const tok = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let K = {};
+const readTokens = () => { K = { paper: tok("--color-paper"), p2: tok("--color-paper-2"), p3: tok("--color-paper-3"), rule: tok("--color-rule"), rule2: tok("--color-rule-2"), ink: tok("--color-ink"), ink2: tok("--color-ink-2"), muted: tok("--color-muted"),
+  acc: tok("--color-accent"), acc2: tok("--color-accent-2"), wash: tok("--color-accent-wash"), deep: tok("--color-accent-deep"), zero: tok("--color-glyph-1"), graph: tok("--color-graphite"), graphInk: tok("--color-graphite-ink"),
+  disp: tok("--font-display"), mono: tok("--font-outlier") }; };
+const imgs = {};
+const ready = Promise.all(["original", "marked_present", "marked_ff1", "diff20_present", "diff20_ff1"].map(n => new Promise(res => { const i = new Image(); i.onload = () => { imgs[n] = i; res(); }; i.onerror = res; i.src = n + ".png"; })));
+
+let SW = 0, SH = 0, DPR = 1, L = {};
+function resize() {
+  const r = cv.getBoundingClientRect();
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  SW = r.width; SH = r.height;
+  cv.width = Math.round(SW * DPR); cv.height = Math.round(SH * DPR);
+  g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const pad = SW < 520 ? 12 : 20;
+  let fw = SW - 2 * pad, fh = fw * H / W;
+  const maxFh = SH * (SW < 520 ? 0.5 : 0.48);
+  if (fh > maxFh) { fh = maxFh; fw = fh * W / H; }
+  const fx = (SW - fw) / 2, fy = SH - pad - fh;
+  const top = { x: pad, y: pad, w: SW - 2 * pad, h: fy - 2 * pad };
+  const gap = Math.max(10, top.w * 0.025), cs = Math.min((top.w - 2 * gap) / 47, 17);
+  const gx = [top.x, top.x + 16 * cs + gap, top.x + 24 * cs + 2 * gap];
+  const small = top.h < 260;
+  L = { pad, fw, fh, fx, fy, top, gap, cs, gx, small, rc: top.w / 64, rh: Math.min(top.w / 64 * 1.7, 26), fs: SW < 520 ? 11 : 13 };
+  draw();
+}
+
+function text(s, x, y, { font = "disp", size = L.fs, weight = 500, color = K.muted, align = "left", base = "alphabetic", alpha = 1 } = {}) {
+  g.save(); g.globalAlpha *= alpha; g.font = `${weight} ${size}px ${font === "mono" ? K.mono : K.disp}`; g.fillStyle = color; g.textAlign = align; g.textBaseline = base; g.fillText(s, x, y); g.restore();
+}
+const tw = (s, size = L.fs, font = "disp", weight = 500) => { g.font = `${weight} ${size}px ${font === "mono" ? K.mono : K.disp}`; return g.measureText(s).width; };
+function cell(x, y, w, h, bit, alpha = 1) { if (alpha <= 0) return; g.globalAlpha = alpha; g.fillStyle = bit === "1" ? K.acc : K.zero; g.fillRect(x + 0.5, y + 0.5, Math.max(1, w - 1), Math.max(1, h - 1)); g.globalAlpha = 1; }
+function emptyCell(x, y, w, h) { g.strokeStyle = K.rule2; g.lineWidth = 1; g.strokeRect(x + 1, y + 1, Math.max(1, w - 2), Math.max(1, h - 2)); }
+function ring(x, y, w, h, color = K.acc, lw = 2) { g.strokeStyle = color; g.lineWidth = lw; g.strokeRect(x - lw, y - lw, w + 2 * lw, h + 2 * lw); }
+function dim(x0, x1, y, label, alpha = 1) {
+  if (alpha <= 0) return;
+  g.save(); g.globalAlpha = alpha; g.strokeStyle = K.rule2; g.lineWidth = 1; g.beginPath();
+  g.moveTo(x0 + 0.5, y - 4); g.lineTo(x0 + 0.5, y + 4); g.moveTo(x1 - 0.5, y - 4); g.lineTo(x1 - 0.5, y + 4); g.moveTo(x0, y + 0.5); g.lineTo(x1, y + 0.5); g.stroke(); g.restore();
+  text(label, x0, y + 16, { alpha });
+}
+const pos64 = (i, y) => [L.top.x + i * L.rc, y];
+function row64(bits, y, n = 64, alpha = 1) { for (let i = 0; i < 64; i++) { const [x] = pos64(i, y); if (i < n) cell(x, y, L.rc, L.rh, bits[i], alpha); else emptyCell(x, y, L.rc, L.rh); } }
+const GROUP = [[0, 16], [64, 8], [96, 23]];
+function cwPos(i, y) { const k = i < 64 ? 0 : i < 96 ? 1 : 2, j = i - GROUP[k][0], cols = GROUP[k][1]; return [L.gx[k] + (j % cols) * L.cs, y + Math.floor(j / cols) * L.cs]; }
+function codewordGroups(y, shown = 188, alpha = 1, labels = 1, hi = -1) {
+  for (let i = 0; i < 188; i++) { const [x, yy] = cwPos(i, y); if (i < shown) cell(x, yy, L.cs, L.cs, CW[i], alpha); else emptyCell(x, yy, L.cs, L.cs); }
+  if (labels > 0) GROUP.forEach(([s, cols], k) => dim(L.gx[k], L.gx[k] + cols * L.cs, y + 4 * L.cs + 8, UI[lang].groups[k], labels * alpha));
+  if (hi >= 0) { const [x, yy] = cwPos(hi, y); ring(x, yy, L.cs, L.cs); }
+}
+function fieldBar(y, alpha = 1) {
+  if (alpha <= 0) return;
+  const parts = [[4, "VER 1", "1"], [32, `user_id = ${D.user_id}`, String(D.user_id)], [24, `session = ${D.session}`, String(D.session)], [4, "rsv 0", "0"]];
+  let x = L.top.x; const h = 26;
+  g.save(); g.globalAlpha = alpha;
+  for (const [n, long, short] of parts) {
+    const w = n * L.rc, hot = n === 32;
+    g.fillStyle = hot ? K.wash : K.p2; g.fillRect(x + 0.5, y, w - 1, h);
+    g.strokeStyle = hot ? K.acc : K.rule; g.lineWidth = 1; g.strokeRect(x + 1, y + 0.5, w - 2, h - 1);
+    const s = tw(long, L.fs, "mono", 400) < w - 10 ? long : short;
+    text(s, x + 6, y + h / 2 + 1, { font: "mono", weight: hot ? 500 : 400, color: hot ? K.acc : K.ink, base: "middle" });
+    x += w;
+  }
+  g.restore();
+}
+
+const FULL = { x: 0, y: 0, w: W };
+const BLOCKV = (() => { const w = 40, h = w * H / W; return { x: clamp(C.col * 8 + 4 - w / 2, 0, W - w), y: clamp(C.row * 8 + 4 - h / 2, 0, H - h), w }; })();
+function viewAt(a, b, t) {
+  const w = Math.exp(lerp(Math.log(a.w), Math.log(b.w), t)), k = a.w === b.w ? t : (a.w - w) / (a.w - b.w);
+  const acx = a.x + a.w / 2, acy = a.y + a.w * H / W / 2, bcx = b.x + b.w / 2, bcy = b.y + b.w * H / W / 2;
+  const h = w * H / W;
+  return { x: clamp(lerp(acx, bcx, k) - w / 2, 0, W - w), y: clamp(lerp(acy, bcy, k) - h / 2, 0, H - h), w };
+}
+const toStage = (v, ix, iy) => [L.fx + (ix - v.x) * L.fw / v.w, L.fy + (iy - v.y) * L.fw / v.w];
+function frame(v, img, alpha = 1) {
+  if (!img || alpha <= 0) return;
+  g.save(); g.beginPath(); g.rect(L.fx, L.fy, L.fw, L.fh); g.clip();
+  g.imageSmoothingEnabled = L.fw / v.w < 3; g.globalAlpha = alpha;
+  g.drawImage(img, v.x, v.y, v.w, v.w * H / W, L.fx, L.fy, L.fw, L.fh);
+  g.restore();
+}
+function frameBorder() { g.strokeStyle = K.rule2; g.lineWidth = 1; g.strokeRect(L.fx - 0.5, L.fy - 0.5, L.fw + 1, L.fh + 1); }
+function mosaic(v, count, alpha) {
+  if (alpha <= 0 || count <= 0) return;
+  const s = L.fw / v.w * 8, inset = s > 6 ? 0.5 : 0;
+  g.save(); g.beginPath(); g.rect(L.fx, L.fy, L.fw, L.fh); g.clip(); g.globalAlpha = alpha;
+  for (const want of ["1", "0"]) {
+    g.fillStyle = want === "1" ? K.acc : K.paper;
+    for (let b = 0; b < Math.min(count, NB); b++) {
+      if (CW[b % 188] !== want) continue;
+      const [x, y] = toStage(v, (b % BX) * 8, Math.floor(b / BX) * 8);
+      if (x > L.fx + L.fw || y > L.fy + L.fh || x + s < L.fx || y + s < L.fy) continue;
+      g.fillRect(x + inset, y + inset, s - 2 * inset, s - 2 * inset);
+    }
+  }
+  g.restore();
+}
+function edgeBand(v, alpha) {
+  if (!EDGE || alpha <= 0) return;
+  const [x, y] = toStage(v, 0, BY * 8), [, y2] = toStage(v, 0, H);
+  g.save(); g.beginPath(); g.rect(L.fx, L.fy, L.fw, L.fh); g.clip(); g.globalAlpha = alpha;
+  g.fillStyle = K.ink; g.fillRect(L.fx, y, L.fw, Math.max(2, y2 - y)); g.restore();
+  const s = UI[lang].edge, w = tw(s) + 12;
+  g.save(); g.globalAlpha = alpha; g.fillStyle = K.ink; g.fillRect(L.fx + L.fw - w, y - 20, w, 20); g.restore();
+  text(s, L.fx + L.fw - 6, y - 6, { color: K.paper, align: "right", alpha });
+}
+function chip(s, x, y, alignRight = false) {
+  const w = tw(s) + 12; const x0 = alignRight ? x - w : x;
+  g.fillStyle = K.paper; g.globalAlpha = 0.92; g.fillRect(x0, y, w, 20); g.globalAlpha = 1;
+  text(s, x0 + 6, y + 14, { color: K.ink });
+}
+
+const fmtC = v => Math.abs(v) >= 9.95 ? v.toFixed(0) : v.toFixed(1);
+function matrix(x, y, c, label, alpha, cellFn) {
+  if (alpha <= 0) return;
+  g.save(); g.globalAlpha = alpha;
+  text(label, x, y - 8);
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
+    const [bg, fg, s, bold] = cellFn(i, j);
+    g.fillStyle = bg; g.fillRect(x + j * c, y + i * c, c - 1, c - 1);
+    if (c >= 15) text(s, x + j * c + c / 2, y + i * c + c / 2 + 0.5, { font: "mono", size: Math.min(12, c * 0.32), weight: bold ? 500 : 400, color: fg, align: "center", base: "middle" });
+  }
+  g.restore();
+}
+const greyOf = v => `oklch(${(v / 255 * 100).toFixed(1)}% 0 0)`;
+
+const cy = h => L.top.y + Math.max(0, (L.top.h - h) / 2);
+function ch0(p, hero) {
+  const u = UI[lang], T = L.top;
+  frame(FULL, imgs.original); frameBorder();
+  let y = cy(L.small || hero ? 80 : 250) + 14;
+  text(u.block64, T.x, y); y += 10;
+  if (!hero) fieldBar(y, 1); y += 36;
+  row64(D.block_bits, y, hero ? 0 : Math.round(64 * seg(p, 0.02, 0.3))); y += L.rh + 30;
+  if (L.small || hero) return u.orig;
+  const mk = Math.round(64 * seg(p, 0.3, 0.55));
+  text(u.master, T.x, y, { alpha: seg(p, 0.28, 0.32) }); y += 18;
+  const per = tw("0".repeat(64), L.fs, "mono", 400) < T.w ? 64 : 32;
+  for (let i = 0; i < 64; i += per) { text(D.master_key.slice(i, Math.min(i + per, mk)), T.x, y, { font: "mono", weight: 400, color: K.ink }); y += 17; }
+  y += 12;
+  text("↓ " + u.hkdf, T.x, y, { alpha: seg(p, 0.55, 0.6) }); y += 26;
+  const keys = [["enc_key", D.enc_key], ["mac_key", D.mac_key], ["stego_key", D.stego_key]];
+  const cols = T.w > 620 ? 3 : 1, cw = cols === 3 ? (T.w - 2 * 16) / 3 : T.w;
+  keys.forEach(([n, v], k) => {
+    const a = seg(p, 0.6 + k * 0.12, 0.68 + k * 0.12); if (a <= 0) return;
+    const x = cols === 3 ? T.x + k * (cw + 16) : T.x, yy = cols === 3 ? y : y + k * 44;
+    if (yy + 30 > T.y + T.h) return;
+    text(`${n} ${u.to[k]}`, x, yy, { alpha: a, color: K.ink2 });
+    const fit = Math.max(8, Math.floor(cw / tw("0", L.fs, "mono", 400)));
+    text(v.length > fit ? v.slice(0, fit - 1) + "…" : v, x, yy + 17, { font: "mono", weight: 400, color: K.ink, alpha: a });
+  });
+  return p < 0.3 ? u.block64 : p < 0.55 ? u.master : u.hkdf;
+}
+
+function ch1(p) {
+  const u = UI[lang], T = L.top;
+  frame(FULL, imgs.original); frameBorder();
+  const r = Math.round(seg(p, 0.04, 0.5) * LAST), st = ST[r];
+  const morph = ease(seg(p, 0.55, 0.7)), base = cy(150);
+  let y = base + 14;
+  const lbl = r === 0 ? u.plain : r === LAST ? u.cipher : u.round(r);
+  text(lbl, T.x, y, { alpha: 1 - morph });
+  text(hex(st), T.x + T.w, y, { font: "mono", weight: 500, color: r === LAST ? K.acc : K.ink, align: "right", alpha: 1 - morph });
+  y += 10;
+  fieldBar(y, 1 - seg(p, 0.02, 0.1));
+  const rowY = y + 36, gy = base + 30;
+  if (morph <= 0) {
+    row64(st, rowY);
+    if (r > 0 && r < LAST && !L.small) text(u.ops, T.x, rowY + L.rh + 20, { alpha: 0.9 });
+    return lbl;
+  }
+  for (let i = 0; i < 64; i++) {
+    const [x0, y0] = pos64(i, rowY), [x1, y1] = cwPos(i, gy);
+    cell(lerp(x0, x1, morph), lerp(y0, y1, morph), lerp(L.rc, L.cs, morph), lerp(L.rh, L.cs, morph), ST[LAST][i]);
+  }
+  const tagA = seg(p, 0.7, 0.8), parN = Math.round(92 * seg(p, 0.8, 0.97));
+  for (let i = 64; i < 188; i++) {
+    const [x, yy] = cwPos(i, gy);
+    if (i < 96) { if (tagA > 0) cell(x, yy, L.cs, L.cs, CW[i], tagA); else emptyCell(x, yy, L.cs, L.cs); }
+    else if (i - 96 < parN) cell(x, yy, L.cs, L.cs, CW[i]); else emptyCell(x, yy, L.cs, L.cs);
+  }
+  GROUP.forEach(([s, cols], k) => dim(L.gx[k], L.gx[k] + cols * L.cs, gy + 4 * L.cs + 8, u.groups[k], k === 0 ? morph : k === 1 ? tagA : seg(p, 0.8, 0.85)));
+  if (!L.small) text(u.cw, T.x, gy + 4 * L.cs + 52, { color: K.ink, alpha: seg(p, 0.95, 1) });
+  return p < 0.8 ? u.groups[p < 0.7 ? 0 : 1] : u.cw;
+}
+
+function ch2(p) {
+  const u = UI[lang], gy = cy(150) + 30;
+  frame(FULL, imgs.original);
+  const fly = seg(p, 0.02, 0.55), rows = Math.round(BY * seg(p, 0.58, 0.85));
+  const landedN = rows > 1 ? rows * BX : 0;
+  const pick = seg(p, 0.86, 0.95);
+  codewordGroups(gy, 188, 1 - 0.55 * seg(p, 0.55, 0.65), 1 - seg(p, 0.55, 0.6), pick > 0 ? C.bit_index : -1);
+  const s = L.fw / W * 8, FL = 0.35, parts = [];
+  if (landedN) mosaic(FULL, landedN, lerp(0.8, 0.5, pick));
+  else for (let i = 0; i < 188; i++) {
+    const k = clamp((fly - (i / 188) * (1 - FL)) / FL);
+    const [bx, by] = toStage(FULL, (i % BX) * 8, Math.floor(i / BX) * 8);
+    if (k >= 1) { g.fillStyle = CW[i] === "1" ? K.acc : K.paper; g.fillRect(bx, by, s, s); continue; }
+    if (k > 0) parts.push([i, k]);
+  }
+  for (const [i, k] of parts) {
+    const [x0, y0] = cwPos(i, gy), [x1, y1] = toStage(FULL, (i % BX) * 8, Math.floor(i / BX) * 8), e = ease(k);
+    const sz = lerp(L.cs, Math.max(s, 3), e);
+    const px = lerp(x0, x1, e), py = lerp(y0, y1, e) - Math.sin(e * Math.PI) * 30;
+    if (CW[i] === "1") { g.fillStyle = K.acc; g.fillRect(px, py, sz, sz); }
+    else { g.fillStyle = K.paper; g.fillRect(px, py, sz, sz); g.strokeStyle = K.ink2; g.lineWidth = 1; g.strokeRect(px + 0.5, py + 0.5, sz - 1, sz - 1); }
+  }
+  frameBorder();
+  edgeBand(FULL, seg(p, 0.7, 0.8));
+  if (pick > 0) {
+    const [bx, by] = toStage(FULL, C.col * 8, C.row * 8);
+    g.globalAlpha = pick; ring(bx, by, s, s, K.acc, 2); g.globalAlpha = 1;
+    chip(u.pick, Math.min(bx + s + 10, L.fx + L.fw - tw(u.pick) - 14), Math.max(L.fy + 4, by - 26));
+  }
+  return p < 0.55 ? u.fly : p < 0.86 ? u.fill : u.pick;
+}
+
+function ch3(p) {
+  const u = UI[lang], T = L.top;
+  const z = ease(seg(p, 0, 0.35)), v = viewAt(FULL, BLOCKV, z), k = seg(p, 0.55, 0.8);
+  frame(v, imgs.original); frame(v, imgs.marked, k);
+  mosaic(v, NB, 0.6 * (1 - seg(p, 0, 0.2)));
+  frameBorder();
+  const [bx, by] = toStage(v, C.col * 8, C.row * 8), s = L.fw / v.w * 8;
+  ring(bx, by, s, s, K.acc, 2);
+  const ma = seg(p, 0.3, 0.42);
+  const n = L.small ? 2 : 3, gap = 20;
+  const c = Math.max(8, Math.min((T.w - (n - 1) * gap) / (8 * n), (T.h - 70) / 8, 34));
+  const y = cy(8 * c + 60) + 24;
+  const x0 = T.x, x1 = x0 + 8 * c + gap, x2 = x1 + 8 * c + gap;
+  matrix(x0, y, c, u.pix, ma, (i, j) => { const val = Math.round(lerp(C.pix_o[i][j], C.pix_m[i][j], k)); return [greyOf(val), val > 128 ? K.ink : K.paper, String(val), false]; });
+  matrix(x1, y, c, u.dct, ma, (i, j) => {
+    const band = inBand(i, j), val = band ? lerp(C.coef_o[i][j], coefT[i][j], k) : C.coef_o[i][j];
+    return band ? [k > 0 ? K.acc : K.wash, k > 0 ? K.paper : K.acc, fmtC(val), true] : [K.p2, K.muted, fmtC(val), false];
+  });
+  if (n === 3) matrix(x2, y, c, u.chg, seg(p, 0.8, 0.9), (i, j) => {
+    const d = C.pix_m[i][j] - C.pix_o[i][j];
+    return d === 0 ? [K.p2, K.muted, "0", false] : d > 0 ? [K.acc, K.paper, "+" + d, true] : [K.graph, K.graphInk, String(d), true];
+  });
+  if (!L.small) text(u.formula, T.x, y + 8 * c + 26, { font: "mono", weight: 400, color: K.ink, alpha: seg(p, 0.5, 0.6) });
+  return p < 0.35 ? u.pick : u.formula;
+}
+
+function ch4(p) {
+  const u = UI[lang], T = L.top;
+  const z = ease(seg(p, 0, 0.25)), v = viewAt(BLOCKV, FULL, z);
+  const wipe = seg(p, 0.3, 0.72), diff = seg(p, 0.76, 0.95);
+  frame(v, imgs.marked);
+  if (wipe > 0 && wipe < 1) {
+    const xw = L.fx + L.fw * (1 - wipe);
+    g.save(); g.beginPath(); g.rect(L.fx, L.fy, xw - L.fx, L.fh); g.clip(); frame(v, imgs.original); g.restore();
+    g.fillStyle = K.acc; g.fillRect(xw - 1, L.fy, 2, L.fh);
+    chip(u.origL, Math.max(L.fx + 6, xw - tw(u.origL) - 20), L.fy + 6);
+    if (xw + 8 < L.fx + L.fw - 60) chip(u.markL, xw + 8, L.fy + 6);
+  }
+  frame(v, imgs.diff20, diff);
+  frameBorder();
+  const a = seg(p, 0.08, 0.25);
+  if (a > 0) {
+    const cols = T.w > 560 ? 4 : 2, cw = T.w / cols;
+    let big = Math.min(48, Math.max(22, T.h * 0.18));
+    while (big > 16 && Math.max(...u.stats.map(([, v]) => tw(v, big, "disp", 600))) > cw - 16) big -= 1;
+    u.stats.forEach(([lab, val], i) => {
+      const x = T.x + (i % cols) * cw, y = cy(cols === 4 ? big + 30 : 2 * big + 74) + 18 + Math.floor(i / cols) * (big + 44);
+      text(lab, x, y, { alpha: a });
+      text(val, x, y + big + 6, { size: big, weight: 600, color: K.ink, alpha: a });
+    });
+  }
+  return diff > 0 ? u.diff : wipe > 0 ? u.wipe : u.marked;
+}
+
+function ch5(p) {
+  const u = UI[lang], T = L.top;
+  frame(FULL, imgs.marked);
+  const scan = seg(p, 0.04, 0.34);
+  if (scan > 0 && scan < 1) {
+    const rows = Math.round(BY * scan);
+    mosaic(FULL, rows * BX, 0.45);
+    const [, sy] = toStage(FULL, 0, rows * 8);
+    g.fillStyle = K.acc; g.fillRect(L.fx, sy - 1, L.fw, 2);
+  }
+  frameBorder();
+  chip(u.leak, L.fx + 6, L.fy + 6);
+
+  const marks = [0.03, 0.34, 0.38, 0.42, 0.47, 0.78, 0.86];
+  let x = T.x, y = cy(L.small ? 120 : 250) + 14, cur = 0;
+  u.steps.forEach((s, i) => {
+    const done = p >= marks[i], w = tw(s) + 22;
+    if (x + w > T.x + T.w) { x = T.x; y += 22; }
+    if (done) cur = i;
+    const isCur = done && (i === u.steps.length - 1 || p < marks[i + 1]);
+    g.fillStyle = isCur ? K.acc : done ? K.ink : K.rule2;
+    g.beginPath(); g.arc(x + 4, y - 4, 3.5, 0, Math.PI * 2); g.fill();
+    text(s, x + 12, y, { color: isCur ? K.acc : done ? K.ink : K.muted });
+    x += w;
+  });
+  const gy = y + 22;
+  const fill = Math.round(188 * scan), fadeCw = 1 - seg(p, 0.48, 0.55);
+  if (fadeCw > 0) { codewordGroups(gy, fill, fadeCw, fadeCw * (L.small ? 0 : 1)); return u.steps[cur]; }
+  const r = LAST - Math.round(LAST * seg(p, 0.5, 0.78)), rowY = gy + 36;
+  fieldBar(gy, seg(p, 0.78, 0.86));
+  row64(ST[r], rowY);
+  const fa = seg(p, 0.86, 0.95);
+  if (fa <= 0) text(r === LAST ? u.cipher : r === 0 ? u.plain : u.round(r), T.x, rowY + L.rh + 18);
+  if (fa > 0) {
+    const big = clamp(T.y + T.h - (rowY + L.rh + 14), 28, 96);
+    const by = rowY + L.rh + 10 + big * 0.78;
+    text(String(D.user_id), T.x, by, { size: big, weight: 600, color: K.acc, alpha: fa });
+    const wNum = tw(String(D.user_id), big, "disp", 600);
+    text(u.user, T.x + wNum + 14, by - big * 0.45, { color: K.ink, alpha: fa });
+    text(u.session, T.x + wNum + 14, by - big * 0.45 + 18, { alpha: fa });
+  }
+  return u.steps[cur];
+}
+
+const chs = [...document.querySelectorAll(".ch")];
+const navLinks = [...document.querySelectorAll(".chapters a")];
+const capEl = document.getElementById("cap"), whereEl = document.getElementById("where");
+const stageEl = document.querySelector(".stage");
+let lastCap = "", lastCur = -2;
+
+function readLine() {
+  const vh = innerHeight;
+  if (!matchMedia("(max-width: 60rem)").matches) return vh * 0.5;
+  const b = 56 + stageEl.getBoundingClientRect().height;
+  return b + (vh - b) * 0.3;
+}
+function progress() {
+  const vh = innerHeight, sr = stageEl.getBoundingClientRect();
+  const stacked = matchMedia("(max-width: 60rem)").matches;
+  const line = readLine();
+  for (let i = chs.length - 1; i >= 0; i--) {
+    const r = chs[i].getBoundingClientRect();
+    if (r.top <= line) return { i, p: clamp((line - r.top) / (r.height - (vh - line))) };
+  }
+  return { i: -1, p: 0 };
+}
+let queued = false;
+const FREEZE = (() => { try { const f = parseFloat(new URLSearchParams(location.search).get("freeze")); return f >= 0 ? f : -1; } catch (e) { return -1; } })();
+function draw() {
+  queued = false;
+  if (!SW || !L.top) return;
+  let { i, p } = progress();
+  if (FREEZE >= 0) { i = Math.min(5, Math.floor(FREEZE)); p = FREEZE - i; }
+  if (RM && i >= 0) p = 1;
+  g.clearRect(0, 0, SW, SH);
+  const cap = i < 0 ? ch0(0, true) : [ch0, ch1, ch2, ch3, ch4, ch5][i](p);
+  if (cap !== lastCap) { capEl.textContent = cap; lastCap = cap; }
+  if (i !== lastCur) {
+    lastCur = i;
+    chs.forEach((c, k) => c.classList.toggle("is-current", k === i));
+    navLinks.forEach((a, k) => k === i ? a.setAttribute("aria-current", "step") : a.removeAttribute("aria-current"));
+    whereEl.textContent = i < 0 ? `${W} × ${H}` : `${i + 1} / 6`;
+  }
+}
+const schedule = () => { if (!queued) { queued = true; requestAnimationFrame(draw); } };
+addEventListener("scroll", schedule, { passive: true });
+new ResizeObserver(() => resize()).observe(cv);
+
+readTokens();
+try { const q = new URLSearchParams(location.search).get("alg"); ALG = q === "ff1" ? "FF1" : q === "present" ? "PRESENT-128" : (localStorage.getItem("wm-alg") === "FF1" ? "FF1" : ALG); } catch (e) {}
+setAlg(ALG);
+
+function jumpTo(at) {
+  const i = Math.floor(at), p = at - i, c = chs[Math.min(i, chs.length - 1)]; if (!c) return;
+  const vh = innerHeight, line = readLine(), r = c.getBoundingClientRect();
+  scrollTo(0, scrollY + r.top - (line - p * (r.height - (vh - line))));
+}
+Promise.all([ready, document.fonts ? document.fonts.ready : null]).then(() => {
+  readTokens(); setAlg(ALG); resize();
+  const at = parseFloat(new URLSearchParams(location.search).get("at"));
+  if (at >= 0) { jumpTo(at); draw(); }
+});
+</script>
+</body>
+</html>

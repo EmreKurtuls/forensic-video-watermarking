@@ -1,0 +1,7 @@
+numpy
+bchlib
+cryptography
+scikit-image
+psutil
+matplotlib
+pytest

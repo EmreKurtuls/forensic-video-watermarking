@@ -1,0 +1,109 @@
+clip,algorithm,case,identity_returned,user_id,raw_bit_errors
+akiyo_cif,PRESENT128,correct keys (control),True,1001,0
+akiyo_cif,PRESENT128,wrong master key,False,,85
+akiyo_cif,PRESENT128,wrong enc_key only,False,,0
+akiyo_cif,PRESENT128,wrong mac_key only,False,,0
+akiyo_cif,PRESENT128,wrong stego_key only,False,,103
+akiyo_cif,PRESENT128,wrong film_id,False,,89
+akiyo_cif,PRESENT128,unmarked original,False,,98
+akiyo_cif,PRESENT128,cross-film replay,False,,88
+akiyo_cif,PRESENT128,framing: forged tag,False,,66
+akiyo_cif,FF1,correct keys (control),True,1001,0
+akiyo_cif,FF1,wrong master key,False,,92
+akiyo_cif,FF1,wrong enc_key only,False,,0
+akiyo_cif,FF1,wrong mac_key only,False,,0
+akiyo_cif,FF1,wrong stego_key only,False,,85
+akiyo_cif,FF1,wrong film_id,False,,93
+akiyo_cif,FF1,unmarked original,False,,81
+akiyo_cif,FF1,cross-film replay,False,,79
+akiyo_cif,FF1,framing: forged tag,False,,61
+foreman_cif,PRESENT128,correct keys (control),True,1001,0
+foreman_cif,PRESENT128,wrong master key,False,,98
+foreman_cif,PRESENT128,wrong enc_key only,False,,0
+foreman_cif,PRESENT128,wrong mac_key only,False,,0
+foreman_cif,PRESENT128,wrong stego_key only,False,,102
+foreman_cif,PRESENT128,wrong film_id,False,,90
+foreman_cif,PRESENT128,unmarked original,False,,96
+foreman_cif,PRESENT128,cross-film replay,False,,91
+foreman_cif,PRESENT128,framing: forged tag,False,,76
+foreman_cif,FF1,correct keys (control),True,1001,0
+foreman_cif,FF1,wrong master key,False,,87
+foreman_cif,FF1,wrong enc_key only,False,,0
+foreman_cif,FF1,wrong mac_key only,False,,0
+foreman_cif,FF1,wrong stego_key only,False,,88
+foreman_cif,FF1,wrong film_id,False,,106
+foreman_cif,FF1,unmarked original,False,,89
+foreman_cif,FF1,cross-film replay,False,,78
+foreman_cif,FF1,framing: forged tag,False,,57
+park_joy_720p,PRESENT128,correct keys (control),True,1001,0
+park_joy_720p,PRESENT128,wrong master key,False,,93
+park_joy_720p,PRESENT128,wrong enc_key only,False,,0
+park_joy_720p,PRESENT128,wrong mac_key only,False,,0
+park_joy_720p,PRESENT128,wrong stego_key only,False,,88
+park_joy_720p,PRESENT128,wrong film_id,False,,91
+park_joy_720p,PRESENT128,unmarked original,False,,96
+park_joy_720p,PRESENT128,cross-film replay,False,,83
+park_joy_720p,PRESENT128,framing: forged tag,False,,72
+park_joy_720p,FF1,correct keys (control),True,1001,0
+park_joy_720p,FF1,wrong master key,False,,106
+park_joy_720p,FF1,wrong enc_key only,False,,0
+park_joy_720p,FF1,wrong mac_key only,False,,0
+park_joy_720p,FF1,wrong stego_key only,False,,96
+park_joy_720p,FF1,wrong film_id,False,,97
+park_joy_720p,FF1,unmarked original,False,,81
+park_joy_720p,FF1,cross-film replay,False,,92
+park_joy_720p,FF1,framing: forged tag,False,,73
+bbb_action_720p,PRESENT128,correct keys (control),True,1001,0
+bbb_action_720p,PRESENT128,wrong master key,False,,90
+bbb_action_720p,PRESENT128,wrong enc_key only,False,,0
+bbb_action_720p,PRESENT128,wrong mac_key only,False,,0
+bbb_action_720p,PRESENT128,wrong stego_key only,False,,81
+bbb_action_720p,PRESENT128,wrong film_id,False,,103
+bbb_action_720p,PRESENT128,unmarked original,False,,82
+bbb_action_720p,PRESENT128,cross-film replay,False,,92
+bbb_action_720p,PRESENT128,framing: forged tag,False,,64
+bbb_action_720p,FF1,correct keys (control),True,1001,0
+bbb_action_720p,FF1,wrong master key,False,,101
+bbb_action_720p,FF1,wrong enc_key only,False,,0
+bbb_action_720p,FF1,wrong mac_key only,False,,0
+bbb_action_720p,FF1,wrong stego_key only,False,,95
+bbb_action_720p,FF1,wrong film_id,False,,87
+bbb_action_720p,FF1,unmarked original,False,,101
+bbb_action_720p,FF1,cross-film replay,False,,93
+bbb_action_720p,FF1,framing: forged tag,False,,65
+sintel_dark_720p,PRESENT128,correct keys (control),True,1001,0
+sintel_dark_720p,PRESENT128,wrong master key,False,,110
+sintel_dark_720p,PRESENT128,wrong enc_key only,False,,0
+sintel_dark_720p,PRESENT128,wrong mac_key only,False,,0
+sintel_dark_720p,PRESENT128,wrong stego_key only,False,,80
+sintel_dark_720p,PRESENT128,wrong film_id,False,,102
+sintel_dark_720p,PRESENT128,unmarked original,False,,92
+sintel_dark_720p,PRESENT128,cross-film replay,False,,104
+sintel_dark_720p,PRESENT128,framing: forged tag,False,,64
+sintel_dark_720p,FF1,correct keys (control),True,1001,0
+sintel_dark_720p,FF1,wrong master key,False,,94
+sintel_dark_720p,FF1,wrong enc_key only,False,,0
+sintel_dark_720p,FF1,wrong mac_key only,False,,0
+sintel_dark_720p,FF1,wrong stego_key only,False,,105
+sintel_dark_720p,FF1,wrong film_id,False,,103
+sintel_dark_720p,FF1,unmarked original,False,,100
+sintel_dark_720p,FF1,cross-film replay,False,,95
+sintel_dark_720p,FF1,framing: forged tag,False,,70
+tos_static_720p,PRESENT128,correct keys (control),True,1001,0
+tos_static_720p,PRESENT128,wrong master key,False,,98
+tos_static_720p,PRESENT128,wrong enc_key only,False,,0
+tos_static_720p,PRESENT128,wrong mac_key only,False,,0
+tos_static_720p,PRESENT128,wrong stego_key only,False,,99
+tos_static_720p,PRESENT128,wrong film_id,False,,92
+tos_static_720p,PRESENT128,unmarked original,False,,86
+tos_static_720p,PRESENT128,cross-film replay,False,,97
+tos_static_720p,PRESENT128,framing: forged tag,False,,57
+tos_static_720p,FF1,correct keys (control),True,1001,0
+tos_static_720p,FF1,wrong master key,False,,84
+tos_static_720p,FF1,wrong enc_key only,False,,0
+tos_static_720p,FF1,wrong mac_key only,False,,0
+tos_static_720p,FF1,wrong stego_key only,False,,98
+tos_static_720p,FF1,wrong film_id,False,,81
+tos_static_720p,FF1,unmarked original,False,,109
+tos_static_720p,FF1,cross-film replay,False,,105
+tos_static_720p,FF1,framing: forged tag,False,,65

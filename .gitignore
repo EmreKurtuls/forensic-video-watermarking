@@ -1,0 +1,27 @@
+# videos and generated outputs (re-creatable, see data/README.md)
+data/raw/
+data/clips/
+data/out/
+# platform secrets / state created by the CLI
+*.key
+*.sqlite
+.venv/
+experiments/venv/
+experiments/dl/
+experiments/work/
+experiments/res/
+__pycache__/
+.pytest_cache/
+data/README.md
+# slides and documents
+*.pptx
+*.pdf
+presentation/final_deck/
+# viewing-test clips (scripts/make_2afc_clips.py) and answers
+subjective_test/clips/
+subjective_test/results/
+subjective_test/results_pilot/
+# local
+.DS_Store
+.claude/
+*.pyc

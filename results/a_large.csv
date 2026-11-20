@@ -1,0 +1,37 @@
+clip,format,algorithm,payload_bytes,capacity_bytes,fits,exact,encrypt_s,embed_s,extract_s,decrypt_s
+foreman_cif,mp4,PRESENT-128 CTR,1024,3801600,True,True,0.0022,2.1614,0.2408,0.0029
+foreman_cif,mkv,PRESENT-128 CTR,1024,3801600,True,True,0.0022,1.6456,0.2274,0.0062
+foreman_cif,avi,PRESENT-128 CTR,1024,3801600,True,True,0.0022,4.2279,0.5252,0.0032
+foreman_cif,mp4,FF1 64-bit chunks,1024,3801600,True,True,0.0998,4.2233,0.2186,0.0370
+foreman_cif,mkv,FF1 64-bit chunks,1024,3801600,True,True,0.0998,1.3174,0.1896,0.0338
+foreman_cif,avi,FF1 64-bit chunks,1024,3801600,True,True,0.0998,1.2790,0.1801,0.0336
+foreman_cif,mp4,PRESENT-128 CTR,65536,3801600,True,True,0.1434,1.8545,0.2192,0.1569
+foreman_cif,mkv,PRESENT-128 CTR,65536,3801600,True,True,0.1434,1.2890,0.1813,0.1460
+foreman_cif,avi,PRESENT-128 CTR,65536,3801600,True,True,0.1434,1.2720,0.1830,0.1457
+foreman_cif,mp4,FF1 64-bit chunks,65536,3801600,True,True,1.8488,1.9422,0.2231,1.9206
+foreman_cif,mkv,FF1 64-bit chunks,65536,3801600,True,True,1.8488,1.3211,0.1884,1.8897
+foreman_cif,avi,FF1 64-bit chunks,65536,3801600,True,True,1.8488,1.2746,0.1839,1.8881
+foreman_cif,mp4,PRESENT-128 CTR,1048576,3801600,True,True,1.9833,1.8680,0.2804,2.1665
+foreman_cif,mkv,PRESENT-128 CTR,1048576,3801600,True,True,1.9833,1.3400,0.2328,2.0848
+foreman_cif,avi,PRESENT-128 CTR,1048576,3801600,True,True,1.9833,1.3179,0.2205,2.0624
+foreman_cif,mp4,FF1 64-bit chunks,1048576,3801600,True,True,29.1924,1.7421,0.2074,29.1543
+foreman_cif,mkv,FF1 64-bit chunks,1048576,3801600,True,True,29.1924,1.3220,0.2008,29.0585
+foreman_cif,avi,FF1 64-bit chunks,1048576,3801600,True,True,29.1924,1.3138,0.2072,29.0403
+bbb_action_720p,mp4,PRESENT-128 CTR,1024,27648000,True,True,0.0020,7.1413,0.2969,0.0020
+bbb_action_720p,mkv,PRESENT-128 CTR,1024,27648000,True,True,0.0020,5.7629,0.3066,0.0021
+bbb_action_720p,avi,PRESENT-128 CTR,1024,27648000,True,True,0.0020,5.6613,0.2847,0.0021
+bbb_action_720p,mp4,FF1 64-bit chunks,1024,27648000,True,True,0.0284,7.1377,0.2981,0.0285
+bbb_action_720p,mkv,FF1 64-bit chunks,1024,27648000,True,True,0.0284,5.7311,0.2915,0.0285
+bbb_action_720p,avi,FF1 64-bit chunks,1024,27648000,True,True,0.0284,5.6257,0.2795,0.0284
+bbb_action_720p,mp4,PRESENT-128 CTR,65536,27648000,True,True,0.1217,7.5731,0.3179,0.1282
+bbb_action_720p,mkv,PRESENT-128 CTR,65536,27648000,True,True,0.1217,5.7152,0.2814,0.1275
+bbb_action_720p,avi,PRESENT-128 CTR,65536,27648000,True,True,0.1217,5.6351,0.2792,0.1275
+bbb_action_720p,mp4,FF1 64-bit chunks,65536,27648000,True,True,1.8182,7.5141,0.3121,1.8219
+bbb_action_720p,mkv,FF1 64-bit chunks,65536,27648000,True,True,1.8182,5.6490,0.2807,1.8167
+bbb_action_720p,avi,FF1 64-bit chunks,65536,27648000,True,True,1.8182,5.6538,0.2800,1.8134
+bbb_action_720p,mp4,PRESENT-128 CTR,1048576,27648000,True,True,1.9899,7.5916,0.3584,2.0167
+bbb_action_720p,mkv,PRESENT-128 CTR,1048576,27648000,True,True,1.9899,5.7782,0.3028,2.0050
+bbb_action_720p,avi,PRESENT-128 CTR,1048576,27648000,True,True,1.9899,5.7938,0.3010,1.9927
+bbb_action_720p,mp4,FF1 64-bit chunks,1048576,27648000,True,True,28.9755,7.1964,0.3190,28.9214
+bbb_action_720p,mkv,FF1 64-bit chunks,1048576,27648000,True,True,28.9755,5.7469,0.3124,28.9134
+bbb_action_720p,avi,FF1 64-bit chunks,1048576,27648000,True,True,28.9755,5.7141,0.3061,28.8655

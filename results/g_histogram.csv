@@ -1,0 +1,43 @@
+clip,comparison,channel,chi_square,kl_bits
+akiyo_cif,marked (SS),R,0.0006,0.0009
+akiyo_cif,marked (SS),G,0.0005,0.0008
+akiyo_cif,marked (SS),B,0.0003,0.0005
+akiyo_cif,reference: CRF 18 re-encode,R,0.0011,0.0016
+akiyo_cif,reference: CRF 18 re-encode,G,0.0007,0.0010
+akiyo_cif,reference: CRF 18 re-encode,B,0.0012,0.0017
+akiyo_cif,marked (SS),Y low-band DCT,0.0182,0.0264
+foreman_cif,marked (SS),R,0.0003,0.0005
+foreman_cif,marked (SS),G,0.0004,0.0005
+foreman_cif,marked (SS),B,0.0003,0.0004
+foreman_cif,reference: CRF 18 re-encode,R,0.0012,0.0016
+foreman_cif,reference: CRF 18 re-encode,G,0.0010,0.0015
+foreman_cif,reference: CRF 18 re-encode,B,0.0013,0.0018
+foreman_cif,marked (SS),Y low-band DCT,0.0011,0.0015
+park_joy_720p,marked (SS),R,0.0000,0.0000
+park_joy_720p,marked (SS),G,0.0000,0.0000
+park_joy_720p,marked (SS),B,0.0000,0.0000
+park_joy_720p,reference: CRF 18 re-encode,R,0.0016,0.0023
+park_joy_720p,reference: CRF 18 re-encode,G,0.0013,0.0019
+park_joy_720p,reference: CRF 18 re-encode,B,0.0010,0.0014
+park_joy_720p,marked (SS),Y low-band DCT,0.0000,0.0001
+bbb_action_720p,marked (SS),R,0.0014,0.0020
+bbb_action_720p,marked (SS),G,0.0008,0.0011
+bbb_action_720p,marked (SS),B,0.0003,0.0005
+bbb_action_720p,reference: CRF 18 re-encode,R,0.0000,0.0001
+bbb_action_720p,reference: CRF 18 re-encode,G,0.0000,0.0001
+bbb_action_720p,reference: CRF 18 re-encode,B,0.0000,0.0001
+bbb_action_720p,marked (SS),Y low-band DCT,0.1838,0.3478
+sintel_dark_720p,marked (SS),R,0.0001,0.0001
+sintel_dark_720p,marked (SS),G,0.0001,0.0001
+sintel_dark_720p,marked (SS),B,0.0002,0.0002
+sintel_dark_720p,reference: CRF 18 re-encode,R,0.0004,0.0005
+sintel_dark_720p,reference: CRF 18 re-encode,G,0.0001,0.0001
+sintel_dark_720p,reference: CRF 18 re-encode,B,0.0004,0.0005
+sintel_dark_720p,marked (SS),Y low-band DCT,0.1575,0.2778
+tos_static_720p,marked (SS),R,0.0001,0.0001
+tos_static_720p,marked (SS),G,0.0000,0.0001
+tos_static_720p,marked (SS),B,0.0000,0.0000
+tos_static_720p,reference: CRF 18 re-encode,R,0.0002,0.0002
+tos_static_720p,reference: CRF 18 re-encode,G,0.0000,0.0000
+tos_static_720p,reference: CRF 18 re-encode,B,0.0001,0.0002
+tos_static_720p,marked (SS),Y low-band DCT,0.0022,0.0032

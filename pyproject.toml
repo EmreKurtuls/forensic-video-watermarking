@@ -1,0 +1,9 @@
+[project]
+name = "videowm"
+version = "0.1.0"
+description = "COM0430 Phase II: forensic watermarking for a film streaming platform"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+testpaths = ["tests"]

@@ -1,0 +1,6 @@
+test,trials,identities_returned,note
+random 188-bit words,100000,0,expected ~0
+wrong enc_key only (PRESENT128),20000,0,key commitment in the MAC: expected 0 (was ~1/256 without it)
+wrong enc_key only (FF1),2000,0,key commitment in the MAC: expected 0 (was ~1/256 without it)
+distinct error messages,2,0,no valid watermark found
+compare_digest timing (ns/call),300000,0,differs in byte 0: 33.1; differs in byte 3: 32.9; equal: 33.3

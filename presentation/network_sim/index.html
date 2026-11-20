@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leak Trace Simulation</title>
+<meta name="description" content="Eight steps from a platform's master key to naming the viewer who leaked a film; every value comes from the project code.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+@import url("./tokens.css");
+@import url("./base.css");
+
+:root { --bar-h: 64px; --foot-h: 64px; --strip-cell: 8px; }
+body { font-size: 1.125rem; }
+.app { display: grid; grid-template-rows: var(--bar-h) minmax(0, 1fr) var(--foot-h); height: 100dvh; }
+
+.bar { border-bottom: var(--rule-hair) solid var(--color-rule); background: var(--color-paper); }
+.bar__in { height: 100%; max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); display: flex; align-items: center; gap: var(--space-lg); }
+.wordmark { font-family: var(--font-display); font-weight: 600; font-size: var(--text-lg); letter-spacing: var(--tracking-display); white-space: nowrap; }
+.steps { display: flex; gap: var(--space-2xs); margin-inline: auto; }
+.group { display: flex; gap: var(--space-2xs); align-items: center; padding: var(--space-2xs); background: var(--color-paper-3); border-radius: var(--radius-input); }
+.group__label { font-family: var(--font-display); font-weight: 500; font-size: var(--text-sm); color: var(--color-muted); padding-inline: var(--space-xs) var(--space-2xs); }
+
+.key { border: var(--rule-hair) solid var(--color-rule-2); border-radius: var(--radius-input); padding: 0 var(--space-md); min-height: 40px; min-width: 40px; background: var(--color-key-face); color: var(--color-ink); font: 500 var(--text-md)/1 var(--font-display); box-shadow: var(--shadow-key); cursor: pointer; transition: transform var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out); }
+.key:hover { transform: translateY(-1px); }
+.key:active, .key[aria-pressed="true"], .key[aria-current="step"] { transform: translateY(2px); box-shadow: var(--shadow-key-press); background: var(--color-paper-2); }
+.key[aria-current="step"] { background: var(--color-accent); border-color: var(--color-accent-edge); color: var(--color-accent-ink); }
+.key[aria-pressed="true"] { color: var(--color-accent-deep); border-color: var(--color-accent); }
+.key:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; transition: none; }
+.key[aria-disabled="true"] { opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
+.key--primary { background: var(--color-accent); border-color: var(--color-accent-edge); color: var(--color-accent-ink); box-shadow: var(--shadow-key-accent); }
+.key--primary:active { background: var(--color-accent-deep); }
+.key--step { padding: 0; width: 40px; font-variant-numeric: tabular-nums; }
+
+.main { max-width: var(--container); width: 100%; margin-inline: auto; padding: var(--space-lg) var(--gutter); display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: var(--gap-columns); min-height: 0; }
+.stage { position: relative; border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper); box-shadow: var(--shadow-card); min-height: 0; display: grid; place-items: center; padding: var(--space-md); }
+@supports (corner-shape: bevel) { .stage, .panel { border-radius: var(--cut-l) 4px var(--cut-l) 4px; corner-shape: bevel round bevel round; } }
+.stage svg { width: 100%; height: 100%; max-height: calc(100dvh - var(--bar-h) - var(--foot-h) - 2 * var(--space-lg) - 2 * var(--space-md)); }
+
+.edge { fill: none; stroke: var(--color-rule-2); stroke-width: 1.5; transition: stroke var(--dur-short) var(--ease-out); }
+.edge.is-live { stroke: var(--color-accent); stroke-width: 2; }
+.edge.is-bad { stroke: var(--color-error); stroke-width: 2; stroke-dasharray: 6 5; }
+.node rect.box { fill: var(--color-paper); stroke: var(--color-rule-2); stroke-width: 1; transition: stroke var(--dur-short) var(--ease-out), fill var(--dur-short) var(--ease-out); }
+.node.is-live rect.box { stroke: var(--color-accent); stroke-width: 2; fill: var(--color-accent-wash); }
+.node.is-bad rect.box { stroke: var(--color-error); stroke-width: 2; }
+.node .t { font-family: var(--font-display); font-weight: 600; font-size: 22px; fill: var(--color-ink); }
+.node .s { font-family: var(--font-body); font-size: 16px; fill: var(--color-ink-2); }
+.node .m { font-family: var(--font-outlier); font-size: 15px; fill: var(--color-ink-2); }
+.node .flag { font-family: var(--font-display); font-weight: 600; font-size: 16px; fill: var(--color-error); }
+.node .ok { font-family: var(--font-display); font-weight: 600; font-size: 16px; fill: var(--color-accent-deep); }
+.node .row { fill: var(--color-paper-2); stroke: var(--color-rule); }
+.node .row.is-live { fill: var(--color-paper); stroke: var(--color-accent); }
+.cell0 { fill: var(--color-paper-3); } .cell1 { fill: var(--color-accent); } .cellx { fill: var(--color-error); }
+.packet { fill: var(--color-accent); }
+.packet--bad { fill: var(--color-error); }
+.packet--req { fill: var(--color-ink-2); }
+.strip, .flag, .ok { transition: opacity var(--dur-long) var(--ease-out); }
+.is-off { opacity: 0; }
+
+.panel { border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper); box-shadow: var(--shadow-card); padding: var(--space-lg); display: flex; flex-direction: column; gap: var(--space-md); min-height: 0; overflow: auto; }
+.panel__count { font-family: var(--font-display); font-weight: 500; font-size: var(--text-sm); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.panel > * { flex-shrink: 0; }
+.panel h2 { font-size: var(--text-2xl); max-width: 22ch; }
+.panel p { font-size: var(--text-md); color: var(--color-ink-2); max-width: 46ch; }
+.graphite { background: var(--color-graphite); color: var(--color-graphite-ink); border-radius: var(--radius-input); padding: var(--space-md); font-family: var(--font-outlier); font-size: 0.875rem; line-height: 1.6; overflow-x: auto; }
+.graphite .c { color: var(--color-graphite-muted); }
+.graphite .v { color: var(--color-accent-2); }
+.graphite .x { color: var(--color-error); }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: var(--space-md); row-gap: var(--space-3xs); }
+.kv > :nth-child(odd) { color: var(--color-graphite-muted); }
+.tbl { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.tbl th { text-align: left; font-family: var(--font-display); font-weight: 500; color: var(--color-graphite-muted); padding: 0 var(--space-sm) var(--space-2xs) 0; }
+.tbl td { padding: var(--space-3xs) var(--space-sm) var(--space-3xs) 0; font-variant-numeric: tabular-nums; }
+.tbl tr.is-lead td { color: var(--color-accent-2); }
+.bits { display: grid; grid-template-columns: repeat(47, minmax(0, 1fr)); gap: var(--space-3xs); max-width: 30rem; }
+.bits span { aspect-ratio: 1; background: var(--color-graphite-glyph-1); }
+.bits span.b1 { background: var(--color-accent-2); }
+.bits span.err { background: var(--color-error); }
+.bitrow { display: grid; gap: var(--space-2xs); }
+.bitrow__label { color: var(--color-graphite-muted); }
+.pics { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-sm); }
+.pics--one { grid-template-columns: minmax(0, 1fr); }
+figure { margin: 0; display: grid; gap: var(--space-2xs); }
+figure img { width: 100%; border-radius: var(--radius-input); border: var(--rule-hair) solid var(--color-rule); }
+figcaption { font-size: var(--text-sm); color: var(--color-muted); }
+.pipe { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2xs); }
+.pipe li { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: var(--space-sm); }
+.pipe li > :first-child { color: var(--color-graphite-muted); }
+.verdict { display: flex; align-items: baseline; gap: var(--space-md); flex-wrap: wrap; }
+.verdict__fig { font-family: var(--font-display); font-weight: 600; font-size: var(--text-2xl); letter-spacing: var(--tracking-display); color: var(--color-ink); font-variant-numeric: tabular-nums; line-height: 1; }
+.verdict__sub { color: var(--color-ink-2); font-size: var(--text-md); }
+.bars { display: grid; gap: var(--space-2xs); }
+.bar-row { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr) 4rem; gap: var(--space-sm); align-items: center; }
+.bar-row__track { height: 10px; background: var(--color-graphite-glyph-1); position: relative; }
+.bar-row__fill { position: absolute; inset: 0 auto 0 0; width: 100%; background: var(--color-accent-2); transform-origin: left center; }
+.bar-row:not(.is-lead) .bar-row__fill { background: var(--color-graphite-glyph-3); }
+.note { font-size: var(--text-sm); color: var(--color-muted); }
+
+.js .reveal.is-armed { opacity: 0; transform: translateY(6px); }
+.reveal { transition: opacity var(--dur-long) var(--ease-out), transform var(--dur-long) var(--ease-out); transition-delay: calc(var(--i, 0) * 260ms + 700ms); }
+
+.foot { border-top: var(--rule-hair) solid var(--color-rule); }
+.foot__in { height: 100%; max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); display: flex; align-items: center; gap: var(--space-sm); }
+
+.noscript { max-width: 60ch; margin: var(--space-3xl) auto; padding-inline: var(--gutter); }
+
+@media (max-height: 820px) and (min-width: 70.01rem) {
+  :root { --bar-h: 56px; --foot-h: 56px; }
+  .main { padding-block: var(--space-md); }
+  .panel { padding: var(--space-md); gap: var(--space-sm); }
+  .panel h2 { font-size: var(--text-xl); }
+  .panel p { font-size: var(--text-sm); }
+  .graphite { padding: var(--space-sm); font-size: 0.8125rem; line-height: 1.5; }
+}
+@media (max-width: 70rem) {
+  .main { grid-template-columns: minmax(0, 1fr); }
+  .stage svg { max-height: none; }
+  .bar__in { flex-wrap: wrap; height: auto; padding-block: var(--space-xs); }
+  .app { grid-template-rows: auto auto auto; height: auto; min-height: 100dvh; }
+  .steps { margin-inline: 0; }
+}
+@media (max-width: 40rem) {
+  .pics { grid-template-columns: minmax(0, 1fr); }
+  .key--step { width: 36px; min-width: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal.is-armed { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+<noscript><div class="noscript"><h1>Leak trace</h1><p>This simulation needs JavaScript. The scroll walkthrough in ../watermark_animation/index.html shows the same pipeline.</p></div></noscript>
+<div class="app" id="app" hidden>
+  <header class="bar"><div class="bar__in">
+    <span class="wordmark">Leak trace</span>
+    <nav class="steps" id="steps" aria-label="Steps"></nav>
+    <div class="group" role="group" aria-labelledby="alg-label">
+      <span class="group__label" id="alg-label" data-t="cipher">Cipher</span>
+      <button class="key" type="button" data-alg="PRESENT-128">PRESENT-128</button>
+      <button class="key" type="button" data-alg="FF1">FF1</button>
+    </div>
+  </div></header>
+
+  <main class="main">
+    <div class="stage">
+      <svg id="net" viewBox="0 0 1040 620" role="img" aria-labelledby="net-title">
+        <title id="net-title">Network: platform, network, three viewers, pirate site</title>
+        <path class="edge" id="e0" d="M250 310 L410 310"/>
+        <path class="edge" id="e1001" d="M530 310 C645 310 645 90 760 90"/>
+        <path class="edge" id="e1002" d="M530 310 C645 310 645 250 760 250"/>
+        <path class="edge" id="e1003" d="M530 310 C645 310 645 410 760 410"/>
+        <path class="edge" id="eleak" d="M960 250 C1025 250 1025 555 960 555"/>
+        <path class="edge" id="etrace" d="M760 555 C470 555 145 600 145 420"/>
+
+        <g class="node" id="n-platform">
+          <rect class="box" x="40" y="160" width="210" height="260" rx="8"/>
+          <text class="t" x="58" y="192" data-t="platform">Platform</text>
+          <rect class="row" id="r-key" x="54" y="208" width="182" height="46" rx="4"/>
+          <text class="s" x="66" y="228" data-t="masterKey">Master key</text>
+          <text class="m" x="66" y="246">secrets, 32 B</text>
+          <rect class="row" id="r-film" x="54" y="262" width="182" height="46" rx="4"/>
+          <text class="s" x="66" y="282" data-t="filmKeys">Film keys</text>
+          <text class="m" x="66" y="300">HKDF-SHA256</text>
+          <rect class="row" id="r-db" x="54" y="316" width="182" height="46" rx="4"/>
+          <text class="s" x="66" y="336" data-t="sessionDb">Session DB</text>
+          <text class="m" x="66" y="354">SQLite</text>
+          <rect class="row" id="r-enc" x="54" y="370" width="182" height="40" rx="4"/>
+          <text class="m" id="t-alg" x="66" y="395">PRESENT-128</text>
+        </g>
+
+        <g class="node" id="n-net">
+          <rect class="box" x="410" y="280" width="120" height="60" rx="8"/>
+          <text class="t" x="470" y="316" text-anchor="middle" data-t="network">Network</text>
+        </g>
+
+        <g class="node" id="n-1001"><rect class="box" x="760" y="40" width="200" height="100" rx="8"/></g>
+        <g class="node" id="n-1002"><rect class="box" x="760" y="200" width="200" height="100" rx="8"/></g>
+        <g class="node" id="n-1003"><rect class="box" x="760" y="360" width="200" height="100" rx="8"/></g>
+
+        <g class="node" id="n-pirate">
+          <rect class="box" x="760" y="515" width="200" height="80" rx="8"/>
+          <text class="t" x="778" y="547" data-t="pirate">Pirate site</text>
+          <text class="m" id="t-pirate" x="778" y="574"></text>
+        </g>
+        <g id="packets"></g>
+      </svg>
+    </div>
+
+    <section class="panel" id="panel" aria-live="polite"></section>
+  </main>
+
+  <footer class="foot"><div class="foot__in">
+    <button class="key" type="button" id="prev" data-t="back">Back</button>
+    <button class="key key--primary" type="button" id="next" data-t="next">Next</button>
+  </div></footer>
+</div>
+
+<script src="./data.js"></script>
+<script>
+(() => {
+  const S = window.SIM;
+  if (!S) return;
+  document.documentElement.classList.add("js");
+  document.getElementById("app").hidden = false;
+  const N = 8;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const svgNS = "http://www.w3.org/2000/svg";
+  const leaker = S.leaker;
+  const fmt = (n, lang) => n.toLocaleString(lang === "tr" ? "tr-TR" : "en-US");
+
+  const STR = {
+    en: {
+      cipher: "Cipher", platform: "Platform", masterKey: "Master key", filmKeys: "Film keys", sessionDb: "Session DB",
+      network: "Network", pirate: "Pirate site", back: "Back", next: "Next", user: "User", session: "session",
+      leaked: "Leaked", identified: "Identified", stepLabel: (i) => `Step ${i} of ${N}`,
+      steps: [
+        { h: "One master key, three film keys",
+          p: "The platform draws a 32-byte master key from the operating system's CSPRNG. HKDF-SHA256 derives this film's keys from it. No key ever leaves the server." },
+        { h: "Three viewers press play",
+          p: "Each request reserves the viewer's next session number in one atomic database step. Because a session is never reused, every plaintext is unique and no nonce has to be embedded." },
+        { h: "Encrypt the 64-bit ID block",
+          p: (alg) => alg === "FF1"
+            ? "FF1 (NIST SP 800-38G) is format-preserving: 64 bits in, 64 bits out, with the film as tweak. It runs AES-128 inside its ten Feistel rounds, so it is slower."
+            : "PRESENT-128 (ISO/IEC 29192-2) is a lightweight cipher with a 64-bit block: the ID fits exactly, and the ciphertext does not grow. AES-GCM would add 224 bits." },
+        { h: "Tag it, then armour it",
+          p: "SipHash-2-4 tags the ciphertext together with the cipher, the film and a key commitment. BCH then adds 92 parity bits that repair up to 12 wrong bits. These 188 bits go into the film." },
+        { h: "Every copy carries a different mark",
+          p: "The bits are spread over 14,400 blocks per frame, in the low DCT band of the brightness channel, and held for one-second groups. The picture changes by about 49 dB PSNR: invisible." },
+        { h: "One viewer leaks a copy",
+          p: (a) => `User ${leaker} shrinks the film to half size, re-encodes it with H.264 at CRF ${a.crf} and uploads it. There is no header to strip: the mark is part of the picture itself.` },
+        { h: "The platform traces the copy",
+          p: "The platform downloads the pirate copy and compares it with its own original, frame by frame." },
+        { h: "The platform names the leaker",
+          p: "Only after the tag checks out is the ciphertext decrypted. The recovered bits match one issued copy, and no other." },
+      ],
+      k: { purpose: "purpose", from: "derived from", sp: "NIST SP 800-22, 100 × 1 Mbit: passed",
+           users: "user", device: "device", sess: "session", block: "block", ct: "ciphertext", us: "µs per block, pure Python",
+           layout: "VER | user_id | session | reserved", tag: "tag", cw: "188-bit codeword",
+           frame: "The frame as the viewer sees it", diff: "Its hidden mark, difference ×20",
+           pirateCap: (t) => `Pirate copy, ${t.pirate_w}×${t.pirate_h}, ${t.pirate_frames} frames`,
+           rescale: "Rescale", align: "Align", correlate: "Correlate", bch: "BCH", mac: "MAC", decrypt: "Decrypt",
+           matched: (m, n) => `${m} / ${n} frames matched`, corr: (b) => `${b} blocks per frame → 188 soft bits`,
+           fixed: (e) => `${e} bit errors repaired (limit 12)`, macok: "valid, constant-time, before decrypt",
+           bitsLabel: "Recovered bits, errors in red", scores: "Match with each issued copy",
+           wrong: "With a wrong key: NoValidMark. An innocent viewer is never named.",
+           took: (s) => `Trace took ${s} s for this 10-second clip.`,
+           perGroup: "frames per group" },
+    }
+  };
+
+  const q = new URLSearchParams(location.search);
+  const st = {
+    step: Math.min(N, Math.max(1, parseInt(q.get("step") || "1", 10) || 1)),
+    alg: q.get("alg") === "ff1" ? "FF1" : "PRESENT-128",
+    lang: "en",
+  };
+  const T = () => STR[st.lang];
+  const A = () => S.algs[st.alg];
+  const save = () => {
+    const p = new URLSearchParams({ step: st.step, alg: st.alg === "FF1" ? "ff1" : "present" });
+    history.replaceState(null, "", "?" + p);
+  };
+
+  const stepsNav = document.getElementById("steps");
+  for (let i = 1; i <= N; i++) {
+    const b = document.createElement("button");
+    b.className = "key key--step"; b.type = "button"; b.textContent = i; b.dataset.step = i;
+    b.addEventListener("click", () => go(i));
+    stepsNav.append(b);
+  }
+
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(svgNS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.append(e);
+    return e;
+  };
+  const tops = { 1001: 40, 1002: 200, 1003: 360 };
+  for (const v of S.viewers) {
+    const g = document.getElementById("n-" + v.id), y = tops[v.id];
+    el("text", { class: "t", x: 778, y: y + 28 }, g).textContent = "";
+    el("text", { class: "s", x: 778, y: y + 50 }, g);
+    const flag = el("text", { class: "flag is-off", x: 960, y: y - 10, "text-anchor": "end" }, g);
+    flag.dataset.role = "flag";
+    const strip = el("g", { class: "strip is-off", transform: `translate(778 ${y + 62})` }, g);
+    strip.dataset.role = "strip";
+    for (let i = 0; i < 188; i++) el("rect", { x: (i % 47) * 3.6, y: Math.floor(i / 47) * 6, width: 2.6, height: 5, class: "cell0" }, strip);
+  }
+
+  const pk = document.getElementById("packets");
+  let flows = [], raf = 0, t0 = 0;
+  const P = (id) => document.getElementById(id);
+  function setFlows(list) {
+    flows = list; pk.replaceChildren();
+    cancelAnimationFrame(raf);
+    if (reduce || !list.length) return;
+    t0 = performance.now();
+    for (const f of flows) f.dots = Array.from({ length: f.n }, () => el("rect", { width: 10, height: 10, x: -5, y: -5, class: f.cls, opacity: 0 }, pk));
+    raf = requestAnimationFrame(tick);
+  }
+  function tick(now) {
+    const t = now - t0;
+    for (const f of flows) {
+      const legs = f.legs.map(P), lens = legs.map((p) => p.getTotalLength()), total = lens.reduce((a, b) => a + b, 0);
+      f.dots.forEach((d, k) => {
+        let u = (t - f.delay - k * f.gap) / f.dur;
+        if (f.loop) u = u < 0 ? u : u % (1 + f.rest);
+        if (u < 0 || u > 1) { d.setAttribute("opacity", 0); return; }
+        let s = (f.reverse ? 1 - u : u) * total, i = 0;
+        while (i < legs.length - 1 && s > lens[i]) { s -= lens[i]; i++; }
+        const pt = legs[i].getPointAtLength(Math.min(s, lens[i]));
+        d.setAttribute("transform", `translate(${pt.x} ${pt.y})`);
+        d.setAttribute("opacity", 1);
+      });
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  const bitsHTML = (s, errs = []) => {
+    const e = new Set(errs);
+    return `<div class="bits" aria-hidden="true">${[...s].map((b, i) => `<span class="${e.has(i) ? "err" : b === "1" ? "b1" : ""}"></span>`).join("")}</div>`;
+  };
+  const hexBlock = (h) => `<span class="v">${h[0]}</span> <span class="v">${h.slice(1, 9)}</span> <span class="v">${h.slice(9, 15)}</span> <span class="v">${h[15]}</span>`;
+
+  function panelHTML() {
+    const t = T(), k = t.k, a = A(), s = t.steps[st.step - 1], lang = st.lang;
+    const p = typeof s.p === "function" ? s.p(st.step === 6 ? S.attack : st.alg) : s.p;
+    let body = "";
+    switch (st.step) {
+      case 1:
+        body = `<div class="graphite"><div class="kv">
+          <span>master_key</span><span>32 B, secrets.token_bytes</span>
+          <span>enc_key</span><span>16 B, HKDF(master, "enc" ‖ <span class="v">${S.film.id}</span>)</span>
+          <span>mac_key</span><span>16 B, HKDF(master, "mac" ‖ <span class="v">${S.film.id}</span>)</span>
+          <span>stego_key</span><span>32 B, HKDF(master, "stego" ‖ <span class="v">${S.film.id}</span>)</span>
+        </div><div class="c" style="margin-top:var(--space-sm)">${k.sp}</div></div>`;
+        break;
+      case 2:
+        body = `<div class="graphite"><table class="tbl"><thead><tr><th>${k.users}</th><th>${k.device}</th><th>${k.sess}</th></tr></thead><tbody>
+          ${S.viewers.map((v) => `<tr><td>${v.id}</td><td>${v.device}</td><td><span class="v">${v.session}</span></td></tr>`).join("")}
+        </tbody></table></div>`;
+        break;
+      case 3:
+        body = `<div class="graphite"><div class="c">${k.layout}</div>
+          <table class="tbl" style="margin-top:var(--space-xs)"><thead><tr><th>${k.users}</th><th>${k.block}</th><th>${k.ct} (${st.alg})</th></tr></thead><tbody>
+          ${a.rows.map((r) => `<tr><td>${r.id}</td><td>${hexBlock(r.block)}</td><td><span class="v">${r.cipher}</span></td></tr>`).join("")}
+          </tbody></table>
+          <div style="margin-top:var(--space-sm)"><span class="v">${fmt(a.encrypt_us, lang)}</span> <span class="c">${k.us}</span>
+          <span class="c">(${st.alg === "FF1" ? "PRESENT-128" : "FF1"}: ${fmt(S.algs[st.alg === "FF1" ? "PRESENT-128" : "FF1"].encrypt_us, lang)})</span></div></div>`;
+        break;
+      case 4:
+        body = `<div class="graphite" style="display:grid;gap:var(--space-sm)">
+          ${a.rows.map((r) => `<div class="bitrow"><span class="bitrow__label">${r.id}, ${k.tag} <span class="v">${r.tag}</span></span>${bitsHTML(r.codeword)}</div>`).join("")}
+          <span class="c">${k.cw}: 64 ${k.ct} + 32 ${k.tag} + 92 BCH</span></div>`;
+        break;
+      case 5:
+        body = `<div class="pics"><figure><img src="frame.jpg" alt="Film frame" width="640" height="360"><figcaption>${k.frame}</figcaption></figure>
+          <figure><img src="diff_${leaker}.jpg" alt="Difference ×20, a fine noise shaped like the picture" width="640" height="360"><figcaption>${k.diff}</figcaption></figure></div>
+          <div class="note">${fmt(S.film.blocks, lang)} × 8×8, α = ${S.film.alpha}, ${S.film.group} ${k.perGroup}</div>`;
+        break;
+      case 6:
+        body = `<div class="pics pics--one"><figure><img src="pirate.jpg" alt="Pirate copy, blurred and blocky" width="640" height="360"><figcaption>${k.pirateCap(a.trace)}</figcaption></figure></div>`;
+        break;
+      case 7: {
+        const tr = a.trace;
+        body = `<div class="graphite"><ol class="pipe">
+            <li class="reveal is-armed" style="--i:0"><span>${k.rescale}</span><span>${tr.pirate_w}×${tr.pirate_h} → ${S.film.width}×${S.film.height}</span></li>
+            <li class="reveal is-armed" style="--i:1"><span>${k.align}</span><span>${k.matched(tr.matched, tr.pirate_frames)}</span></li>
+            <li class="reveal is-armed" style="--i:2"><span>${k.correlate}</span><span>${k.corr(fmt(S.film.blocks, lang))}</span></li>
+            <li class="reveal is-armed" style="--i:3"><span>${k.bch}</span><span><span class="${tr.errors.length ? "x" : "v"}">${k.fixed(tr.errors.length)}</span></span></li>
+            <li class="reveal is-armed" style="--i:4"><span>${k.mac}</span><span>${k.macok}</span></li>
+          </ol>
+          <div class="bitrow reveal is-armed" style="--i:3;margin-top:var(--space-sm)"><span class="bitrow__label">${k.bitsLabel}</span>${bitsHTML(tr.extracted, tr.errors)}</div></div>`;
+        break;
+      }
+      case 8: {
+        const tr = a.trace, ok = tr.user !== null;
+        const sc = Object.entries(tr.scores).sort((x, y) => y[1] - x[1]);
+        body = `<div class="graphite"><ol class="pipe"><li><span>${k.decrypt}</span><span>${st.alg} → <span class="v">${t.user} ${tr.user}, ${t.session} ${tr.session}</span></span></li></ol></div>
+          <div class="verdict reveal is-armed" style="--i:0"><span class="verdict__fig">${ok ? `${t.user} ${tr.user}` : "NoValidMark"}</span><span class="verdict__sub">${t.session} ${tr.session}</span></div>
+          <div class="graphite bars reveal is-armed" style="--i:1"><span class="c">${k.scores}</span>
+            ${sc.map(([id, v]) => `<div class="bar-row${+id === tr.user ? " is-lead" : ""}"><span>${id}</span><span class="bar-row__track"><span class="bar-row__fill" style="transform:scaleX(${Math.max(0, v)})"></span></span><span>${v.toFixed(2)}</span></div>`).join("")}
+          </div>
+          <div class="note reveal is-armed" style="--i:2">${k.wrong} ${k.took(fmt(a.trace_s, lang))}</div>`;
+        break;
+      }
+    }
+    return `<span class="panel__count">${t.stepLabel(st.step)}</span><h2>${s.h}</h2><p>${p}</p>${body}`;
+  }
+
+  function stage() {
+    const s = st.step, a = A(), t = T();
+    const live = { 1: ["platform"], 2: ["platform", "net", "1001", "1002", "1003"], 3: ["platform"], 4: ["platform"],
+                   5: ["platform", "net", "1001", "1002", "1003"], 6: ["1002"], 7: ["platform"], 8: ["platform", "1002"] }[s];
+    for (const id of ["platform", "net", "1001", "1002", "1003", "pirate"]) {
+      P("n-" + id).classList.toggle("is-live", live.includes(id));
+      P("n-" + id).classList.toggle("is-bad", id === "pirate" && s >= 6);
+    }
+    const rows = { 1: ["r-key", "r-film"], 2: ["r-db"], 3: ["r-enc"], 4: ["r-enc"], 7: ["r-film"], 8: ["r-enc"] }[s] || [];
+    for (const r of ["r-key", "r-film", "r-db", "r-enc"]) P(r).classList.toggle("is-live", rows.includes(r));
+    const edges = { 2: ["e0", "e1001", "e1002", "e1003"], 5: ["e0", "e1001", "e1002", "e1003"], 7: ["etrace"], 8: ["etrace"] }[s] || [];
+    for (const e of ["e0", "e1001", "e1002", "e1003", "eleak", "etrace"]) {
+      P(e).classList.toggle("is-live", edges.includes(e));
+      P(e).classList.toggle("is-bad", e === "eleak" && s >= 6);
+    }
+    P("t-alg").textContent = st.alg;
+    P("t-pirate").textContent = s >= 6 ? `${a.trace.pirate_w}×${a.trace.pirate_h}, CRF ${S.attack.crf}` : "";
+    for (const v of S.viewers) {
+      const g = P("n-" + v.id), y = tops[v.id];
+      const [title, sub] = g.querySelectorAll("text.t, text.s");
+      title.textContent = `${t.user} ${v.id}`;
+      sub.textContent = `${v.device}, ${t.session} ${v.session}`;
+      const row = a.rows.find((r) => r.id === v.id);
+      const strip = g.querySelector('[data-role="strip"]');
+      const errs = new Set(s >= 7 && v.id === leaker ? a.trace.errors : []);
+      [...strip.children].forEach((c, i) => c.setAttribute("class", errs.has(i) ? "cellx" : row.codeword[i] === "1" ? "cell1" : "cell0"));
+      strip.classList.toggle("is-off", s < 5);
+      const flag = g.querySelector('[data-role="flag"]');
+      flag.textContent = v.id === leaker ? (s === 8 ? t.identified : t.leaked) : "";
+      flag.setAttribute("class", (s === 8 ? "ok" : "flag") + (v.id === leaker && s >= 6 ? "" : " is-off"));
+    }
+    const viewersLegs = S.viewers.map((v) => ["e0", "e" + v.id]);
+    if (s === 2) setFlows(viewersLegs.map((legs, i) => ({ legs, reverse: true, n: 1, gap: 0, dur: 1300, delay: i * 250, loop: true, rest: 0.8, cls: "packet--req" })));
+    else if (s === 5) setFlows(viewersLegs.map((legs, i) => ({ legs, reverse: false, n: 4, gap: 260, dur: 1500, delay: i * 120, loop: true, rest: 0.6, cls: "packet" })));
+    else if (s === 6) setFlows([{ legs: ["eleak"], reverse: false, n: 3, gap: 300, dur: 1400, delay: 200, loop: true, rest: 0.9, cls: "packet--bad" }]);
+    else if (s === 7) setFlows([{ legs: ["etrace"], reverse: false, n: 3, gap: 180, dur: 900, delay: 0, loop: false, cls: "packet--bad" }]);
+    else setFlows([]);
+  }
+
+  function render() {
+    const t = T();
+    document.documentElement.lang = st.lang;
+    document.querySelectorAll("[data-t]").forEach((e) => { const v = t[e.dataset.t]; if (typeof v === "string") e.textContent = v; });
+    stepsNav.querySelectorAll("button").forEach((b) => {
+      const on = +b.dataset.step === st.step;
+      b.toggleAttribute("aria-current", on); if (on) b.setAttribute("aria-current", "step");
+      b.setAttribute("aria-label", t.stepLabel(+b.dataset.step) + ": " + t.steps[+b.dataset.step - 1].h);
+    });
+    document.querySelectorAll("[data-alg]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.alg === st.alg));
+    P("prev").setAttribute("aria-disabled", st.step === 1);
+    P("next").setAttribute("aria-disabled", st.step === N);
+    const panel = P("panel");
+    panel.innerHTML = panelHTML();
+    if (!reduce) requestAnimationFrame(() => requestAnimationFrame(() => panel.querySelectorAll(".is-armed").forEach((e) => e.classList.remove("is-armed"))));
+    else panel.querySelectorAll(".is-armed").forEach((e) => e.classList.remove("is-armed"));
+    stage();
+    save();
+  }
+
+  function go(i) { st.step = Math.min(N, Math.max(1, i)); render(); }
+  P("prev").addEventListener("click", () => go(st.step - 1));
+  P("next").addEventListener("click", () => go(st.step + 1));
+  document.querySelectorAll("[data-alg]").forEach((b) => b.addEventListener("click", () => { st.alg = b.dataset.alg; render(); }));
+  addEventListener("keydown", (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (["ArrowRight", "PageDown", " "].includes(k)) { e.preventDefault(); go(st.step + 1); }
+    else if (["ArrowLeft", "PageUp"].includes(k)) { e.preventDefault(); go(st.step - 1); }
+    else if (k === "Home") go(1);
+    else if (k === "End") go(N);
+    else if (/^[1-8]$/.test(k)) go(+k);
+    else if (k === "c" || k === "C") { st.alg = st.alg === "FF1" ? "PRESENT-128" : "FF1"; render(); }
+  });
+  render();
+})();
+</script>
+</body>
+</html>

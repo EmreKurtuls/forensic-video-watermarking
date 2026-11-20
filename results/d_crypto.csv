@@ -1,0 +1,13 @@
+algorithm,operation,us_per_op,mb_per_s,cpu_s,peak_mem_kb
+PRESENT-128,encrypt block,14.6384,,,
+PRESENT-128,decrypt block,32.9317,,,
+PRESENT-128,payload encode (enc+MAC+BCH),26.7523,,,
+PRESENT-128,payload decode (BCH+MAC+dec),47.5523,,,
+FF1,encrypt block,217.9534,,,
+FF1,decrypt block,218.5943,,,
+FF1,payload encode (enc+MAC+BCH),228.7345,,,
+FF1,payload decode (BCH+MAC+dec),232.9371,,,
+PRESENT-128,bulk encrypt 1 MB,,0.4844,2.0642,130 (64 KB input)
+PRESENT-128,bulk decrypt 1 MB,,0.4901,2.0404,194 (64 KB input)
+FF1,bulk encrypt 1 MB,,0.0353,28.3331,131 (64 KB input)
+FF1,bulk decrypt 1 MB,,0.0351,28.4420,131 (64 KB input)
