@@ -43,7 +43,7 @@ def main():
                 rate = nb * fps / G
             elif method == "QIM":
                 qim_blind.embed_video(src, m, bits, keys.stego_key, strength)
-                read = lambda v: (qim_blind.extract_soft(v, keys.stego_key, strength, nbits) > 0).astype(np.uint8)
+                read = lambda v: qim_blind.decide(qim_blind.extract_soft(v, keys.stego_key, strength, nbits))
                 rate = nb * fps / G
             else:
                 data = rng.integers(0, 256, info.width * info.height * info.nframes // 8, dtype=np.uint8).tobytes()

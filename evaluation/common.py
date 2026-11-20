@@ -96,7 +96,7 @@ def embed_qim(src, dst, cw, keys, delta):
 def extract_qim(pirate, src_info, codec, delta):
     soft = qim_blind.extract_soft(pirate, codec.keys.stego_key, delta, len(codec.encode(0, 0)),
                                   fps=src_info.fps, width=src_info.width, height=src_info.height)
-    bits = (soft > 0).astype(np.uint8)
+    bits = qim_blind.decide(soft)
     return decode_or_none(codec, bits), bits
 
 

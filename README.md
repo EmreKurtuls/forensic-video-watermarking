@@ -19,6 +19,42 @@ Every viewing session gets its own copy of the film. The viewer's ID and session
 
 All cryptography is implemented in pure Python and checked against official known-answer tests: FIPS 197, SP 800-38A and SP 800-38G for AES and FF1, the SipHash reference vectors, and OpenTitan vectors for PRESENT-128. That keeps the speed comparison of the two ciphers fair. `cryptography` is used only for HKDF and as a cross-check in the tests.
 
+## Results
+
+The mark is invisible. The frames below show the original, the copy marked for one viewer, and their difference amplified 20 times. PSNR(Y) is 49.1 dB.
+
+| Original | Marked | Difference × 20 |
+|---|---|---|
+| ![original](presentation/watermark_animation/original.png) | ![marked](presentation/watermark_animation/marked_present.png) | ![difference](presentation/watermark_animation/diff20_present.png) |
+
+Every test was run on 6 clips: two CIF test sequences, park_joy 720p50, and an action scene, a dark scene and a static scene from three Blender films. Test (a) also used every clip as MP4, MKV and AVI. Tests (a) and (d) also include a 1080p clip.
+
+| Test | Result |
+|---|---|
+| (a) Accuracy | 42 / 42 marked copies traced to the right viewer with 0 bit errors (7 clips × MP4, MKV, AVI × PRESENT-128, FF1). Large data (1 KB, 64 KB, 1 MB, LSB): 36 / 36 recovered bit for bit. |
+| (b) Degradation | Viewer found in 6 / 6 clips after H.264 or H.265 up to CRF 28, 50 % downscale, trimming with frame drops, and 1 % burst packet loss. At CRF 35: 4 / 6 (H.265: 5 / 6). |
+| (c) Wrong key | 0 of 96 wrong-key, wrong-film, unmarked, replayed or forged copies returned an ID. 0 of 100,000 random codewords were accepted. |
+| (d) Performance | PRESENT-128: 14.6 µs per block, 0.48 MB/s. FF1: 218 µs, 0.035 MB/s (pure Python). Embedding takes 15–46 s per minute of 720p video, with at most 181 MB of RAM. |
+| (e) Quality | PSNR(Y) 49.0–49.1 dB, SSIM(Y) 0.993–0.999, VMAF 96.3–99.9. The thresholds of 45 dB and 0.99 were set before the tests. |
+| (f) Capacity | 1.6–14.4 kbit/s raw, 0.5–7.7 kbit/s usable after CRF 23. LSB carries megabits, but nothing survives re-encoding. |
+| (g) Steganalysis | The RGB histogram changes no more than a CRF 18 re-encode does (χ² ≤ 0.0014 vs ≤ 0.0016). A DCT calibration detector scores AUC 0.58 on a CRF 23 copy, close to chance. |
+
+**Robustness (test b):** the share of clips in which the viewer was identified, per attack and method. "SS" is our method. QIM is a blind baseline at the same quality (Δ=24) and at lower quality (Δ=64). LSB is a fragile baseline.
+
+![robustness](results/fig_b_identified.png)
+
+**Quality and robustness (test e):** bit error rate after H.264 CRF 28 against image quality. At the 49 dB we use, spread spectrum has no errors. Blind QIM needs Δ ≥ 32 to match it, which pushes SSIM below 0.99.
+
+<img src="results/fig_e_tradeoff.png" width="560" alt="quality vs robustness">
+
+**Cipher speed (test d):**
+
+<img src="results/fig_d_crypto.png" width="640" alt="cipher speed">
+
+Limitations: small CIF clips lose the ID at CRF 35, where there is less picture to carry the mark. With random packet loss (1 % and above), the blind QIM baseline does better than our method. This is probably because QIM reads every frame on its own, while our method has to align the damaged frames to the original. Filming the screen and geometric attacks are outside the threat model.
+
+More figures: [BER vs CRF](results/fig_b_ber_vs_crf.png), [capacity](results/fig_f_capacity.png), [histograms](results/fig_g_histograms.png). All raw numbers are in `results/*.csv`.
+
 ## Setup
 
 Requires Python ≥ 3.11 and FFmpeg (with `libvmaf` for the VMAF metric).
@@ -29,18 +65,65 @@ python3 -m venv .venv
 ./.venv/bin/python -m pytest -q
 ```
 
-## Usage
+## Usage: mark your own video and trace a leak
+
+The command line plays the platform. It has four steps. Run every command from the repository root:
 
 ```bash
 export PYTHONPATH=src
 PY=./.venv/bin/python
-$PY -m videowm keygen        --key platform.key
-$PY -m videowm register-film --db platform.sqlite --film-id BBB-0001 --original film.mp4 --alg present   # or --alg ff1
-$PY -m videowm embed         --db platform.sqlite --key platform.key --film-id BBB-0001 --user-id 1001 --out copy.mkv
-$PY -m videowm trace         --db platform.sqlite --key platform.key --film-id BBB-0001 --pirate leak.mp4
 ```
 
-The master key is written to its own file with mode 0600. The SQLite database holds films, sessions and issued copies, but no keys. Never commit `*.key` or `*.sqlite` files.
+**1. Create the platform's master key.** You do this once. Every film key is derived from it.
+
+```bash
+$PY -m videowm keygen --key platform.key
+```
+
+The key file is created with mode 0600. Without this file no copy can be traced, so do not lose it and never commit it.
+
+**2. Register your video and choose the cipher.** The cipher is fixed per film: `--alg present` uses PRESENT-128 (the default) and `--alg ff1` uses FF1.
+
+```bash
+$PY -m videowm register-film --db platform.sqlite --film-id MYFILM-P --original /full/path/to/my_video.mp4 --alg present
+$PY -m videowm register-film --db platform.sqlite --film-id MYFILM-F --original /full/path/to/my_video.mp4 --alg ff1
+```
+
+- Any format FFmpeg can read works as input (MP4, MKV, AVI, MOV, …).
+- To compare the two ciphers on the same video, register it twice under two film IDs, as above.
+- Give the full path. The database stores the path, and tracing reads the unmarked original from it, so leave the file where it is.
+- `--alpha` sets the mark strength. The default, 3.1, keeps PSNR(Y) ≥ 45 dB and SSIM ≥ 0.99. A higher value is more robust but more visible.
+
+**3. Make a marked copy for a viewer.** Each call opens a new session for that user, so two copies for the same user are still told apart.
+
+```bash
+$PY -m videowm embed --db platform.sqlite --key platform.key --film-id MYFILM-P --user-id 1001 --out copy_1001.mkv
+# copy for user 1001 (session 0) written to copy_1001.mkv: 300 frames, PSNR(Y) 49.1 dB, 0.7 s
+```
+
+- The output container follows the extension: `.mkv` and `.avi` are FFV1 and `.mp4` is H.264 with `-qp 0`. All three are lossless, so the files are large.
+- A real platform would compress the copy before streaming, e.g. `ffmpeg -i copy_1001.mkv -c:v libx264 -crf 23 stream_1001.mp4`. The mark survives this.
+- Only the video track is written. To put the original audio back: `ffmpeg -i copy_1001.mkv -i my_video.mp4 -map 0:v -map 1:a? -c copy copy_1001_audio.mkv`.
+- `user-id` is a 32-bit number. The session number is assigned automatically.
+- Speed: a 720p video takes about 15–46 s per minute of video, 1080p about 106 s.
+
+**4. Trace a leaked copy.** Give the film ID of the leaked film and the suspicious file:
+
+```bash
+ffmpeg -i copy_1001.mkv -vf scale=iw/2:ih/2 -c:v libx264 -crf 23 leak.mp4   # simulate a pirate: half size, re-encoded
+$PY -m videowm trace --db platform.sqlite --key platform.key --film-id MYFILM-P --pirate leak.mp4
+# watermark valid: user 1001, session 0 (1 bit errors corrected, 300 frames, 1.1 s)
+# issued 2026-11-20T05:56:55+00:00 as copy_1001.mkv
+```
+
+- Exit codes: `0` means the viewer was found. `2` means no valid mark was found: unmarked video, wrong key or wrong film ID, or too much damage. `3` means the MAC was valid but no issued copy in the database matches it.
+- The pirate copy may be re-encoded (H.264/H.265), downscaled, trimmed, have frames dropped or have lost packets. The tracer rescales it and aligns it to the original by itself.
+
+**Without the command line:** Mark studio is a local web page that runs the same pipeline. You can upload a video, choose PRESENT-128 or FF1, enter a viewer ID, mark the first 5–60 s, and compare the original, the marked copy and the ×20 difference:
+
+```bash
+PYTHONPATH=src ./.venv/bin/python scripts/mark_studio.py   # then open http://127.0.0.1:8765
+```
 
 ## Test data
 

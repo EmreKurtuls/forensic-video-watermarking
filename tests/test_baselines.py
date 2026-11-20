@@ -24,7 +24,7 @@ def test_qim_lossless_blind_roundtrip(clip, keys, tmp_path):
     st = qim_blind.embed_video(clip, m, cw, keys.stego_key, delta=24)
     assert st.frames == N and st.psnr_y > 40
     soft = qim_blind.extract_soft(m, keys.stego_key, 24, 188)
-    ident = codec.decode((soft > 0).astype(np.uint8))
+    ident = codec.decode(qim_blind.decide(soft))
     assert (ident.user_id, ident.session) == (42, 9)
 
 
@@ -34,7 +34,18 @@ def test_qim_wrong_stego_key_gives_no_identity(clip, keys, tmp_path):
     qim_blind.embed_video(clip, m, codec.encode(42, 9), keys.stego_key, delta=24)
     soft = qim_blind.extract_soft(m, os.urandom(32), 24, 188)
     with pytest.raises(NoValidMark):
-        codec.decode((soft > 0).astype(np.uint8))
+        codec.decode(qim_blind.decide(soft))
+
+
+def test_qim_threshold_handles_bias_and_imbalance():
+    rng = np.random.default_rng(1)
+    bits = np.zeros(188, np.uint8)
+    bits[:112] = 1
+    rng.shuffle(bits)
+    soft = np.where(bits == 1, 40.0, -40.0) + rng.normal(0, 8, 188) - 45.0
+    assert np.sum((soft > 0) != bits) > 12
+    assert np.sum((soft > np.median(soft)) != bits) > 12
+    assert np.array_equal(qim_blind.decide(soft), bits)
 
 
 def test_lsb_large_payload_lossless(clip, keys, tmp_path):

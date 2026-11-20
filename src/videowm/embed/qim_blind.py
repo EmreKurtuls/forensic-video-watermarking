@@ -60,3 +60,20 @@ def extract_soft(marked, stego_key: bytes, delta: float, nbits: int, fps=None, w
             cache = (g, bit_index(g, nb, nbits), pattern(stego_key, g, nb, K))
         np.add.at(soft, cache[1], soft_luma(fr.y, cache[2], delta))
     return soft
+
+
+def threshold(soft: np.ndarray, iterations: int = 50) -> float:
+    t = float(np.median(soft))
+    for _ in range(iterations):
+        hi, lo = soft[soft > t], soft[soft <= t]
+        if len(hi) == 0 or len(lo) == 0:
+            break
+        t2 = float(hi.mean() + lo.mean()) / 2
+        if abs(t2 - t) < 1e-9:
+            break
+        t = t2
+    return t
+
+
+def decide(soft: np.ndarray) -> np.ndarray:
+    return (soft > threshold(soft)).astype(np.uint8)
