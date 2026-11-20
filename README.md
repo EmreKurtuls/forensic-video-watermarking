@@ -1,7 +1,5 @@
 # Forensic video watermarking for a film streaming platform
 
-COM0430 Cryptography, Phase II (2026–2027 Fall).
-
 Every viewing session gets its own copy of the film. The viewer's ID and session number are encrypted, authenticated and hidden invisibly in the picture. When a copy appears on a pirate site, the platform reads the mark back and identifies the viewer who leaked it. The mark survives re-encoding, downscaling, trimming and packet loss.
 
 ## How it works
