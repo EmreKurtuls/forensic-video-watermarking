@@ -2,6 +2,10 @@
 
 Every viewing session gets its own copy of the film. The viewer's ID and session number are encrypted, authenticated and hidden invisibly in the picture. When a copy appears on a pirate site, the platform reads the mark back and identifies the viewer who leaked it. The mark survives re-encoding, downscaling, trimming and packet loss.
 
+![leak trace](docs/network_trace.gif)
+
+*The whole scenario on a real run. The platform marks three viewers' copies. User 1002 leaks a copy that was halved in size and re-encoded at CRF 33. The platform traces it back to user 1002, session 2. Live version: `presentation/network_sim/index.html` (←/→ to step, C to switch cipher).*
+
 ## How it works
 
 | Part | Choice |
@@ -16,6 +20,21 @@ Every viewing session gets its own copy of the film. The viewer's ID and session
 | Baselines | Blind QIM/STDM and LSB matching, used for comparison only. |
 
 All cryptography is implemented in pure Python and checked against official known-answer tests: FIPS 197, SP 800-38A and SP 800-38G for AES and FF1, the SipHash reference vectors, and OpenTitan vectors for PRESENT-128. That keeps the speed comparison of the two ciphers fair. `cryptography` is used only for HKDF and as a cross-check in the tests.
+
+### One ID, step by step
+
+![watermark walkthrough](docs/watermark_walkthrough.gif)
+
+*The values in this walkthrough come from the project code:*
+
+1. *The 64-bit block holding user 42 is built and the keys are derived.*
+2. *The block is encrypted with PRESENT-128.*
+3. *The tag and BCH are added and the 188 bits are spread over the frame's 8×8 blocks.*
+4. *Inside one block, the ±1 pattern changes five DCT coefficients.*
+5. *The marked frame is shown next to its ×20 difference.*
+6. *The leaked copy is aligned and correlated, then BCH, MAC and decryption give back the viewer.*
+
+*Live version with the FF1 switch: `presentation/watermark_animation/index.html`.*
 
 ## Results
 
@@ -35,7 +54,7 @@ Every test was run on 6 clips: two CIF test sequences, park_joy 720p50, and an a
 | (d) Performance | PRESENT-128: 14.6 µs per block, 0.48 MB/s. FF1: 218 µs, 0.035 MB/s (pure Python). Embedding takes 15–46 s per minute of 720p video, with at most 181 MB of RAM. |
 | (e) Quality | PSNR(Y) 49.0–49.1 dB, SSIM(Y) 0.993–0.999, VMAF 96.3–99.9. The thresholds of 45 dB and 0.99 were set before the tests. |
 | (f) Capacity | 1.6–14.4 kbit/s raw, 0.5–7.7 kbit/s usable after CRF 23. LSB carries megabits, but nothing survives re-encoding. |
-| (g) Steganalysis | The RGB histogram changes no more than a CRF 18 re-encode does (χ² ≤ 0.0014 vs ≤ 0.0016). A DCT calibration detector scores AUC 0.58 on a CRF 23 copy, close to chance. |
+| (g) Steganalysis | The RGB histograms change by the same order as an ordinary CRF 18 re-encode: χ² ≤ 0.0014 against ≤ 0.0016. A DCT calibration detector scores AUC 0.58 on a CRF 23 copy, close to chance. |
 
 **Robustness (test b):** the share of clips in which the viewer was identified, per attack and method. "SS" is our method. QIM is a blind baseline at the same quality (Δ=24) and at lower quality (Δ=64). LSB is a fragile baseline.
 
@@ -49,9 +68,19 @@ Every test was run on 6 clips: two CIF test sequences, park_joy 720p50, and an a
 
 <img src="results/fig_d_crypto.png" width="640" alt="cipher speed">
 
+**Capacity (test f):** bits per second the mark can carry, on a log scale. LSB holds megabits only when the copy is lossless. After re-encoding, only the DCT methods keep a usable channel.
+
+<img src="results/fig_f_capacity.png" width="560" alt="capacity">
+
+**Colour histograms (test g):** RGB histograms of the original and the marked copy on the action clip, and the change caused by the mark next to the change caused by a plain CRF 18 re-encode.
+
+![histograms](results/fig_g_histograms.png)
+
+Tests (a) and (c) are pass/fail counts, so they appear only in the table above.
+
 Limitations: small CIF clips lose the ID at CRF 35, where there is less picture to carry the mark. With random packet loss (1 % and above), the blind QIM baseline does better than our method. This is probably because QIM reads every frame on its own, while our method has to align the damaged frames to the original. Filming the screen and geometric attacks are outside the threat model.
 
-More figures: [BER vs CRF](results/fig_b_ber_vs_crf.png), [capacity](results/fig_f_capacity.png), [histograms](results/fig_g_histograms.png). All raw numbers are in `results/*.csv`.
+More figures: [BER vs CRF](results/fig_b_ber_vs_crf.png). All raw numbers are in `results/*.csv`.
 
 ## Setup
 
@@ -144,9 +173,9 @@ No video file is redistributed in this repository. The only material taken from 
 
 | Clip | Source | Licence / terms |
 |---|---|---|
-| Big Buck Bunny | © 2008 Blender Foundation, [peach.blender.org](https://peach.blender.org) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). The frames in `presentation/network_sim/` are taken from it and modified (watermark added). |
+| Big Buck Bunny | © 2008 Blender Foundation, [peach.blender.org](https://peach.blender.org) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). The frames in `presentation/network_sim/` and `docs/network_trace.gif` are taken from it and modified (watermark added). |
 | Sintel | © Blender Foundation, [durian.blender.org](https://durian.blender.org) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
-| Tears of Steel | (CC) Blender Foundation, [mango.blender.org](https://mango.blender.org) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). The frames in `presentation/watermark_animation/` are taken from it and modified (watermark added). |
+| Tears of Steel | (CC) Blender Foundation, [mango.blender.org](https://mango.blender.org) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). The frames in `presentation/watermark_animation/`, `docs/watermark_walkthrough.gif` and the Results section are taken from it and modified (watermark added). |
 | akiyo, foreman (CIF) | Standard video test sequences, distributed by [Xiph.org Video Test Media](https://media.xiph.org/video/derf/) | Used for research and testing only, under the terms stated there |
 | park_joy, crowd_run | SVT (Sveriges Television) test sequences, distributed by [Xiph.org Video Test Media](https://media.xiph.org/video/derf/) | Used for research and testing only, under the terms stated there |
 
@@ -181,6 +210,7 @@ VIDEOWM_CLIPS=akiyo_cif VIDEOWM_RESULTS=data/out/smoke_results PYTHONPATH=src ./
 | `evaluation/` | Test scenarios (a)–(g) and plots |
 | `results/` | Measured results (CSV) and figures |
 | `scripts/` | Dataset preparation, comparison videos, data for the demo pages, viewing-test clips |
+| `docs/` | README animations (`scripts/make_readme_gifs.sh` rebuilds them from the demo pages with headless Chrome) |
 | `presentation/` | HTML demo pages: watermark walkthrough, network simulation, Mark studio |
 | `subjective_test/` | 2AFC viewing-test page (generate the clips with `scripts/make_2afc_clips.py`) |
 | `experiments/` | Prototype scripts behind the design decisions (separate `requirements.txt`) |
